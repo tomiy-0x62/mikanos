@@ -1,0 +1,26 @@
+CPFLAG += -I. -D__SCLE
+CPPFLAGS =
+CFLAGS   = -Og -Wall -g -static -fuse-ld=lld -z norelro -L/lib/x86_64-linux-gnu
+CXXFLAGS = -Og -Wall -g -static -fuse-ld=lld -z norelro -L/lib/x86_64-linux-gnu
+
+# CC = gcc # Cンパイラーを指定
+# CXX = g++ # C++コンパイラーを指
+
+# LDFLAGS = -L/home/ryosuke/glibc/lib -z norelro -static -v # -image-base 0xffff800000000000
+# LDFLAGS = -L/lib/x86_64-linux-gnu -z norelro -static -v # -image-base 0x08000000
+
+.PHONY: all
+all: $(TARGET)
+
+$(TARGET): $(OBJS) Makefile
+	mv $(OBJS) $(TARGET)
+#	ld.lld $(LDFLAGS) -o $@ $(OBJS) -lc -lm # -lc++abi -lc++
+
+%.o: %.c Makefile
+	gcc $(CPPFLAGS) $(CFLAGS) $< -o $@ -v -Wl,--image-base=0x40000000 
+
+%.o: %.cpp Makefile
+	g++ $(CPPFLAGS) $(CXXFLAGS) $< -o $@ -v -Wl,--image-base=0x40000000
+
+#%.o: %.asm Makefile
+#	nasm -f elf64 -o $@ $<
