@@ -7,6 +7,11 @@
 
 #include "syscall.h"
 
+void _start(){
+    int ret = main();
+    exit(ret);
+}
+
 int close(int fd) {
   errno = EBADF;
   return -1;
