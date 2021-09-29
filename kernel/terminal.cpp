@@ -612,7 +612,8 @@ WithError<int> Terminal::ExecuteFile(fat::DirectoryEntry& file_entry,
     return { 0, err };
   }
 
-  LinearAddress4Level args_frame_addr{0xffff'ffff'ffff'f000};
+  // LinearAddress4Level args_frame_addr{0xffff'ffff'ffff'f000};
+  LinearAddress4Level args_frame_addr{0x0000'0000'ffff'f000};
   if (auto err = SetupPageMaps(args_frame_addr, 1)) {
     return { 0, err };
   }
@@ -627,7 +628,8 @@ WithError<int> Terminal::ExecuteFile(fat::DirectoryEntry& file_entry,
 
   // #@@range_begin(increase_appstack)
   const int stack_size = 16 * 4096;
-  LinearAddress4Level stack_frame_addr{0xffff'ffff'ffff'f000 - stack_size};
+  // LinearAddress4Level stack_frame_addr{0xffff'ffff'ffff'f000 - stack_size};
+  LinearAddress4Level stack_frame_addr{0x0000'0000'ffff'f000 - stack_size};
   // #@@range_end(increase_appstack)
   if (auto err = SetupPageMaps(stack_frame_addr, stack_size / 4096)) {
     return { 0, err };
@@ -637,7 +639,9 @@ WithError<int> Terminal::ExecuteFile(fat::DirectoryEntry& file_entry,
     task.Files().push_back(files_[i]);
   }
 
-  const uint64_t elf_next_page =
+  /*const uint64_t elf_next_page =
+    (app_load.vaddr_end + 4095) & 0xffff'ffff'ffff'f000;*/
+    const uint64_t elf_next_page =
     (app_load.vaddr_end + 4095) & 0xffff'ffff'ffff'f000;
   task.SetDPagingBegin(elf_next_page);
   task.SetDPagingEnd(elf_next_page);
@@ -651,7 +655,8 @@ WithError<int> Terminal::ExecuteFile(fat::DirectoryEntry& file_entry,
   task.Files().clear();
   task.FileMaps().clear();
 
-  if (auto err = CleanPageMaps(LinearAddress4Level{0xffff'8000'0000'0000})) {
+  // if (auto err = CleanPageMaps(LinearAddress4Level{0xffff'8000'0000'0000})) {
+  if (auto err = CleanPageMaps(LinearAddress4Level{0x0000'0000'4000'0000})) {
     return { ret, err };
   }
   return { ret, FreePML4(task) };
