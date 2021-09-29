@@ -119,7 +119,7 @@ WithError<uint64_t> LoadELF(Elf64_Ehdr* ehdr) {
   }
 
   const auto addr_first = GetFirstLoadAddress(ehdr);
-  if (addr_first < 0xffff'8000'0000'0000) {
+  if (0x0000'8000'0000'0000 <= addr_first && addr_first < 0xffff'8000'0000'0000) {
     return { 0, MAKE_ERROR(Error::kInvalidFormat) };
   }
 
