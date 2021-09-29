@@ -10,6 +10,10 @@ Syscall%1:
     ret
 %endmacro
 
+define_syscall read,         0x00000000
+define_syscall write,        0x00000001
+define_syscall open,         0x00000002
+define_syscall close,         0x8000000f
 define_syscall LogString,        0x80000000
 define_syscall PutString,        0x80000001
 define_syscall Exit,             0x80000002

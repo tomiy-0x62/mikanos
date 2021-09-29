@@ -287,16 +287,20 @@ WriteMSR:  ; void WriteMSR(uint32_t msr, uint64_t value);
 
 extern GetCurrentTaskOSStackPointer
 extern syscall_table
+extern syscall_table_lin
+extern numSyscall
+extern numLinSyscall
+extern invalid_Syscall_num
 global SyscallEntry
 SyscallEntry:  ; void SyscallEntry(void);
     push rbp
     push rcx  ; original RIP
     push r11  ; original RFLAGS
 
-    push rax  ; システムコール番号を保存
+    push rax  ; システムコール番号をスタックにプッシュ
 
     mov rcx, r10
-    and eax, 0x7fffffff
+    
     mov rbp, rsp
 
     ; システムコールを OS 用スタックで実行するための準備
@@ -315,10 +319,38 @@ SyscallEntry:  ; void SyscallEntry(void);
     pop rdx
     pop rax
     and rsp, 0xfffffffffffffff0
+    
+    test eax, 0x80000000 ; eax & 0x80000000 の結果が zero かどうかを判定 0x10e503
+    jz .LinSyscall
 
-    call [syscall_table + 8 * eax]
+    .MikanSyscall: 
+        and eax, 0x7fffffff ; 0x80000001の8の部分を剥がす
+        cmp eax, [numSyscall] ; if(eax >= numSyscall)
+        jae .InvalidSyscallNum
+        call [syscall_table + 8 * eax]
+        jmp .SyscallEnd
+
+    .LinSyscall: 
+        cmp eax, [numLinSyscall] ; if(eax >= numLinSyscall)
+        jae .InvalidLinSyscallNum
+        call [syscall_table_lin + 8 * eax]
+        jmp .SyscallEnd
+
+    .InvalidSyscallNum:
+        or eax, 0x80000000
+    .InvalidLinSyscallNum:
+        ; システムコール番号をediに入れて
+        ; nvalid_Syscall_numの第一引数として渡す
+        mov edi, eax
+        call invalid_Syscall_num
+        mov rsp, rbp
+        jmp .exit
+        
+
     ; rbx, r12-r15 は callee-saved なので呼び出し側で保存しない
     ; rax は戻り値用なので呼び出し側で保存しない
+
+    .SyscallEnd:
 
     mov rsp, rbp
 

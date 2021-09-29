@@ -4,7 +4,9 @@
 #include <cstdint>
 #include <cerrno>
 #include <cmath>
+#include <cstdio>
 #include <fcntl.h>
+#include <cstring>
 
 #include "asmfunc.h"
 #include "msr.hpp"
@@ -395,13 +397,68 @@ SYSCALL(MapFile) {
   return { vaddr_begin, 0 };
 }
 
+// Linux System call
+SYSCALL(read) {
+  if (arg1 != kError && arg1 != kWarn && arg1 != kInfo && arg1 != kDebug) {
+    return { 0, EPERM };
+  }
+  const char* s = reinterpret_cast<const char*>(arg2);
+  const auto len = strlen(s);
+  if (len > 1024) {
+    return { 0, E2BIG };
+  }
+  Log(static_cast<LogLevel>(arg1), "%s", s);
+  return { len, 0 };
+}
+
+SYSCALL(write) {
+  if (arg1 != kError && arg1 != kWarn && arg1 != kInfo && arg1 != kDebug) {
+    return { 0, EPERM };
+  }
+  const char* s = reinterpret_cast<const char*>(arg2);
+  const auto len = strlen(s);
+  if (len > 1024) {
+    return { 0, E2BIG };
+  }
+  Log(static_cast<LogLevel>(arg1), "%s", s);
+  return { len, 0 };
+}
+
+
+SYSCALL(open) {
+  if (arg1 != kError && arg1 != kWarn && arg1 != kInfo && arg1 != kDebug) {
+    return { 0, EPERM };
+  }
+  const char* s = reinterpret_cast<const char*>(arg2);
+  const auto len = strlen(s);
+  if (len > 1024) {
+    return { 0, E2BIG };
+  }
+  Log(static_cast<LogLevel>(arg1), "%s", s);
+  return { len, 0 };
+}
+
 #undef SYSCALL
 
 } // namespace syscall
 
+extern "C" void invalid_Syscall_num(unsigned int syscallNum){
+  const char *msg1 = "Error: Invalid Syscall Number\n";
+  char s[100]; // スタック上
+  // 他の方法としてnew char[100], malloc(100) ヒープ領域に生成
+  // 場所は違うけど、どちらも100byteの配列が作られる
+  int length = std::sprintf(s, "There is no Syscall Number: 0x%08X\n", syscallNum);
+  // PUtString/Writeは書き込むべきbyte数 -> null文字は含まない
+  syscall::PutString(1, (uint64_t)msg1, strlen(msg1), 1, 1, 1);
+  syscall::PutString(1, (uint64_t)s, length, 1, 1, 1);
+  syscall::Exit(-1, 1, 1, 1, 1, 1);
+}
+
 using SyscallFuncType = syscall::Result (uint64_t, uint64_t, uint64_t,
                                          uint64_t, uint64_t, uint64_t);
-extern "C" std::array<SyscallFuncType*, 0x10> syscall_table{
+
+extern "C" constexpr unsigned int numSyscall = 0x10;
+extern "C" std::array<SyscallFuncType*, numSyscall> syscall_table{
   /* 0x00 */ syscall::LogString,
   /* 0x01 */ syscall::PutString,
   /* 0x02 */ syscall::Exit,
@@ -419,6 +476,14 @@ extern "C" std::array<SyscallFuncType*, 0x10> syscall_table{
   /* 0x0e */ syscall::DemandPages,
   /* 0x0f */ syscall::MapFile,
 };
+
+extern "C" constexpr unsigned int numLinSyscall = 0x3;
+extern "C" std::array<SyscallFuncType*, numLinSyscall> syscall_table_lin{
+   /* 0x00 */ syscall::read,   
+   /* 0x01 */ syscall::write,
+   /* 0x02 */ syscall::open,
+};
+
 
 void InitializeSyscall() {
   WriteMSR(kIA32_EFER, 0x0501u);
