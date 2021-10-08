@@ -17,10 +17,10 @@ $(TARGET): $(OBJS) Makefile
 #	ld.lld $(LDFLAGS) -o $@ $(OBJS) -lc -lm # -lc++abi -lc++
 
 %.o: %.c Makefile
-	gcc $(CPPFLAGS) $(CFLAGS) $< -o $@ -v -Wl,--image-base=0x40000000 
+	gcc $(CPPFLAGS) $(CFLAGS) $< -o $@ -v -Wl,--image-base=0x7000000 
 
 %.o: %.cpp Makefile
-	g++ $(CPPFLAGS) $(CXXFLAGS) $< -o $@ -v -Wl,--image-base=0x40000000
+	g++ $(CPPFLAGS) $(CXXFLAGS) $< -o $@ -v -Wl,--image-base=0x7000000
 
 #%.o: %.asm Makefile
 #	nasm -f elf64 -o $@ $<
