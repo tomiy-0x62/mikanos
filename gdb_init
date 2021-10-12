@@ -1,4 +1,4 @@
-terget remote localhost:1234
+target remote localhost:1234
 file ./kernel/kernel.elf
 b terminal.cpp:100
 b terminal.cpp:110
