@@ -1,0 +1,6 @@
+terget remote localhost:1234
+file ./kernel/kernel.elf
+b terminal.cpp:100
+b terminal.cpp:110
+b terminal.cpp:111
+b *0x123456c
