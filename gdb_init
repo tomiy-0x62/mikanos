@@ -1,6 +1,8 @@
 target remote localhost:1234
 file ./kernel/kernel.elf
-b terminal.cpp:100
-b terminal.cpp:110
-b terminal.cpp:111
-b *0x13456c
+set disassembly-flavor intel
+disp/5i $pc
+b *0x1348f0
+b *0x135b60
+b *0x135360
+b Exit
