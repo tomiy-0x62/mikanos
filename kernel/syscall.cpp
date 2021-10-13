@@ -442,7 +442,7 @@ SYSCALL(open) {
 
 } // namespace syscall
 
-extern "C" void invalid_Syscall_num(unsigned int syscallNum){
+extern "C" syscall::Result invalid_Syscall_num(unsigned int syscallNum){
   const char *msg1 = "Error: Invalid Syscall Number\n";
   char s[100]; // スタック上
   // 他の方法としてnew char[100], malloc(100) ヒープ領域に生成
@@ -451,7 +451,7 @@ extern "C" void invalid_Syscall_num(unsigned int syscallNum){
   // PUtString/Writeは書き込むべきbyte数 -> null文字は含まない
   syscall::PutString(1, (uint64_t)msg1, strlen(msg1), 1, 1, 1);
   syscall::PutString(1, (uint64_t)s, length, 1, 1, 1);
-  syscall::Exit(-1, 1, 1, 1, 1, 1);
+  return syscall::Exit(-1, 1, 1, 1, 1, 1);
 }
 
 using SyscallFuncType = syscall::Result (uint64_t, uint64_t, uint64_t,
