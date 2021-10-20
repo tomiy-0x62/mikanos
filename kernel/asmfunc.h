@@ -17,6 +17,7 @@ extern "C" {
   uint64_t GetCR3();
   void SwitchContext(void* next_ctx, void* current_ctx);
   void RestoreContext(void* ctx);
+  unsigned int getEAX();
   int CallApp(int argc, char** argv, uint16_t ss, uint64_t rip, uint64_t rsp, uint64_t* os_stack_ptr);
   void IntHandlerLAPICTimer();
   void LoadTR(uint16_t sel);

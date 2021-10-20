@@ -438,6 +438,33 @@ SYSCALL(open) {
   return { len, 0 };
 }
 
+SYSCALL(getuid) {
+  return { 0, 0 };
+}
+
+SYSCALL(geteuid) {
+  return { 0, 0 };
+}
+
+SYSCALL(getegid) {
+  return { 0, 0 };
+}
+
+SYSCALL(getgid) {
+  return { 0, 0 };
+}
+
+SYSCALL(dummy) {
+  unsigned int syscallNum = getEAX();
+  const char *msg1 = "Error: Invalid Syscall Number\n";
+  char s[100];
+  int length = std::sprintf(s, "There is no Syscall Number: 0x%08X\n", syscallNum);
+  syscall::PutString(1, (uint64_t)msg1, strlen(msg1), 1, 1, 1);
+  syscall::PutString(1, (uint64_t)s, length, 1, 1, 1);
+  while (true) __asm__("hlt");
+  return { 0, 0 };
+}
+
 #undef SYSCALL
 
 } // namespace syscall
@@ -477,11 +504,168 @@ extern "C" std::array<SyscallFuncType*, numSyscall> syscall_table{
   /* 0x0f */ syscall::MapFile,
 };
 
-extern "C" constexpr unsigned int numLinSyscall = 0x3;
+extern "C" constexpr unsigned int numLinSyscall = 0x9f;
 extern "C" std::array<SyscallFuncType*, numLinSyscall> syscall_table_lin{
-   /* 0x00 */ syscall::read,   
-   /* 0x01 */ syscall::write,
-   /* 0x02 */ syscall::open,
+  /* 0x000 */ syscall::read,
+  /* 0x001 */ syscall::write,
+  /* 0x002 */ syscall::open,
+  /* 0x003 */ syscall::dummy,
+  /* 0x004 */ syscall::dummy,
+  /* 0x005 */ syscall::dummy,
+  /* 0x006 */ syscall::dummy,
+  /* 0x007 */ syscall::dummy,
+  /* 0x008 */ syscall::dummy,
+  /* 0x009 */ syscall::dummy,
+  /* 0x00a */ syscall::dummy,
+  /* 0x00b */ syscall::dummy,
+  /* 0x00c */ syscall::dummy,
+  /* 0x00d */ syscall::dummy,
+  /* 0x00e */ syscall::dummy,
+  /* 0x00f */ syscall::dummy,
+  /* 0x010 */ syscall::dummy,
+  /* 0x011 */ syscall::dummy,
+  /* 0x012 */ syscall::dummy,
+  /* 0x013 */ syscall::dummy,
+  /* 0x014 */ syscall::dummy,
+  /* 0x015 */ syscall::dummy,
+  /* 0x016 */ syscall::dummy,
+  /* 0x017 */ syscall::dummy,
+  /* 0x018 */ syscall::dummy,
+  /* 0x019 */ syscall::dummy,
+  /* 0x01a */ syscall::dummy,
+  /* 0x01b */ syscall::dummy,
+  /* 0x01c */ syscall::dummy,
+  /* 0x01d */ syscall::dummy,
+  /* 0x01e */ syscall::dummy,
+  /* 0x01f */ syscall::dummy,
+  /* 0x020 */ syscall::dummy,
+  /* 0x021 */ syscall::dummy,
+  /* 0x022 */ syscall::dummy,
+  /* 0x023 */ syscall::dummy,
+  /* 0x024 */ syscall::dummy,
+  /* 0x025 */ syscall::dummy,
+  /* 0x026 */ syscall::dummy,
+  /* 0x027 */ syscall::dummy,
+  /* 0x028 */ syscall::dummy,
+  /* 0x029 */ syscall::dummy,
+  /* 0x02a */ syscall::dummy,
+  /* 0x02b */ syscall::dummy,
+  /* 0x02c */ syscall::dummy,
+  /* 0x02d */ syscall::dummy,
+  /* 0x02e */ syscall::dummy,
+  /* 0x02f */ syscall::dummy,
+  /* 0x030 */ syscall::dummy,
+  /* 0x031 */ syscall::dummy,
+  /* 0x032 */ syscall::dummy,
+  /* 0x033 */ syscall::dummy,
+  /* 0x034 */ syscall::dummy,
+  /* 0x035 */ syscall::dummy,
+  /* 0x036 */ syscall::dummy,
+  /* 0x037 */ syscall::dummy,
+  /* 0x038 */ syscall::dummy,
+  /* 0x039 */ syscall::dummy,
+  /* 0x03a */ syscall::dummy,
+  /* 0x03b */ syscall::dummy,
+  /* 0x03c */ syscall::dummy,
+  /* 0x03d */ syscall::dummy,
+  /* 0x03e */ syscall::dummy,
+  /* 0x03f */ syscall::dummy,
+  /* 0x040 */ syscall::dummy,
+  /* 0x041 */ syscall::dummy,
+  /* 0x042 */ syscall::dummy,
+  /* 0x043 */ syscall::dummy,
+  /* 0x044 */ syscall::dummy,
+  /* 0x045 */ syscall::dummy,
+  /* 0x046 */ syscall::dummy,
+  /* 0x047 */ syscall::dummy,
+  /* 0x048 */ syscall::dummy,
+  /* 0x049 */ syscall::dummy,
+  /* 0x04a */ syscall::dummy,
+  /* 0x04b */ syscall::dummy,
+  /* 0x04c */ syscall::dummy,
+  /* 0x04d */ syscall::dummy,
+  /* 0x04e */ syscall::dummy,
+  /* 0x04f */ syscall::dummy,
+  /* 0x050 */ syscall::dummy,
+  /* 0x051 */ syscall::dummy,
+  /* 0x052 */ syscall::dummy,
+  /* 0x053 */ syscall::dummy,
+  /* 0x054 */ syscall::dummy,
+  /* 0x055 */ syscall::dummy,
+  /* 0x056 */ syscall::dummy,
+  /* 0x057 */ syscall::dummy,
+  /* 0x058 */ syscall::dummy,
+  /* 0x059 */ syscall::dummy,
+  /* 0x05a */ syscall::dummy,
+  /* 0x05b */ syscall::dummy,
+  /* 0x05c */ syscall::dummy,
+  /* 0x05d */ syscall::dummy,
+  /* 0x05e */ syscall::dummy,
+  /* 0x05f */ syscall::dummy,
+  /* 0x060 */ syscall::dummy,
+  /* 0x061 */ syscall::dummy,
+  /* 0x062 */ syscall::dummy,
+  /* 0x063 */ syscall::dummy,
+  /* 0x064 */ syscall::dummy,
+  /* 0x065 */ syscall::dummy,
+  /* 0x066 */ syscall::getuid,
+  /* 0x067 */ syscall::dummy,
+  /* 0x068 */ syscall::getgid,
+  /* 0x069 */ syscall::dummy,
+  /* 0x06a */ syscall::dummy,
+  /* 0x06b */ syscall::geteuid,
+  /* 0x06c */ syscall::getegid,
+  /* 0x06d */ syscall::dummy,
+  /* 0x06e */ syscall::dummy,
+  /* 0x06f */ syscall::dummy,
+  /* 0x070 */ syscall::dummy,
+  /* 0x071 */ syscall::dummy,
+  /* 0x072 */ syscall::dummy,
+  /* 0x073 */ syscall::dummy,
+  /* 0x074 */ syscall::dummy,
+  /* 0x075 */ syscall::dummy,
+  /* 0x076 */ syscall::dummy,
+  /* 0x077 */ syscall::dummy,
+  /* 0x078 */ syscall::dummy,
+  /* 0x079 */ syscall::dummy,
+  /* 0x07a */ syscall::dummy,
+  /* 0x07b */ syscall::dummy,
+  /* 0x07c */ syscall::dummy,
+  /* 0x07d */ syscall::dummy,
+  /* 0x07e */ syscall::dummy,
+  /* 0x07f */ syscall::dummy,
+  /* 0x080 */ syscall::dummy,
+  /* 0x081 */ syscall::dummy,
+  /* 0x082 */ syscall::dummy,
+  /* 0x083 */ syscall::dummy,
+  /* 0x084 */ syscall::dummy,
+  /* 0x085 */ syscall::dummy,
+  /* 0x086 */ syscall::dummy,
+  /* 0x087 */ syscall::dummy,
+  /* 0x088 */ syscall::dummy,
+  /* 0x089 */ syscall::dummy,
+  /* 0x08a */ syscall::dummy,
+  /* 0x08b */ syscall::dummy,
+  /* 0x08c */ syscall::dummy,
+  /* 0x08d */ syscall::dummy,
+  /* 0x08e */ syscall::dummy,
+  /* 0x08f */ syscall::dummy,
+  /* 0x090 */ syscall::dummy,
+  /* 0x091 */ syscall::dummy,
+  /* 0x092 */ syscall::dummy,
+  /* 0x093 */ syscall::dummy,
+  /* 0x094 */ syscall::dummy,
+  /* 0x095 */ syscall::dummy,
+  /* 0x096 */ syscall::dummy,
+  /* 0x097 */ syscall::dummy,
+  /* 0x098 */ syscall::dummy,
+  /* 0x099 */ syscall::dummy,
+  /* 0x09a */ syscall::dummy,
+  /* 0x09b */ syscall::dummy,
+  /* 0x09c */ syscall::dummy,
+  /* 0x09d */ syscall::dummy,
+  /* 0x09e */ syscall::dummy,
+  // /* 0x09e */ syscall::arch_prctl,
 };
 
 

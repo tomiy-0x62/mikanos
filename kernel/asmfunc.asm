@@ -285,6 +285,10 @@ WriteMSR:  ; void WriteMSR(uint32_t msr, uint64_t value);
     wrmsr
     ret
 
+global getEAX
+getEAX:  ; unsigned int getEAX();
+    ret
+
 extern GetCurrentTaskOSStackPointer
 extern syscall_table
 extern syscall_table_lin
