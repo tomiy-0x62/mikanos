@@ -1,8 +1,21 @@
+# qemuに接続
 target remote localhost:1234
+
 file ./kernel/kernel.elf
+
+# 逆アセンブル結果をintel形式に
 set disassembly-flavor intel
+
+# ブレークするごとに逆アセンブル結果を表示
 disp/5i $pc
-b *0x1348f0
-b *0x135b60
-b *0x135360
-b Exit
+
+# IntHandlerPF
+b *0x134900
+
+# IntHandlerGP
+b *0x135b70
+
+# IntHandlerUD
+b *0x135370
+
+# b Exit
