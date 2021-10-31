@@ -398,44 +398,23 @@ SYSCALL(MapFile) {
 }
 
 // Linux System call
-SYSCALL(read) {
-  if (arg1 != kError && arg1 != kWarn && arg1 != kInfo && arg1 != kDebug) {
-    return { 0, EPERM };
-  }
-  const char* s = reinterpret_cast<const char*>(arg2);
-  const auto len = strlen(s);
-  if (len > 1024) {
-    return { 0, E2BIG };
-  }
-  Log(static_cast<LogLevel>(arg1), "%s", s);
-  return { len, 0 };
-}
 
 SYSCALL(write) {
-  if (arg1 != kError && arg1 != kWarn && arg1 != kInfo && arg1 != kDebug) {
-    return { 0, EPERM };
-  }
+  const auto fd = arg1;
   const char* s = reinterpret_cast<const char*>(arg2);
-  const auto len = strlen(s);
+  const auto len = arg3;
   if (len > 1024) {
     return { 0, E2BIG };
   }
-  Log(static_cast<LogLevel>(arg1), "%s", s);
-  return { len, 0 };
-}
 
+  __asm__("cli");
+  auto& task = task_manager->CurrentTask();
+  __asm__("sti");
 
-SYSCALL(open) {
-  if (arg1 != kError && arg1 != kWarn && arg1 != kInfo && arg1 != kDebug) {
-    return { 0, EPERM };
+  if (fd < 0 || task.Files().size() <= fd || !task.Files()[fd]) {
+    return { 0, EBADF };
   }
-  const char* s = reinterpret_cast<const char*>(arg2);
-  const auto len = strlen(s);
-  if (len > 1024) {
-    return { 0, E2BIG };
-  }
-  Log(static_cast<LogLevel>(arg1), "%s", s);
-  return { len, 0 };
+  return { task.Files()[fd]->Write(s, len), 0 };
 }
 
 SYSCALL(getuid) {
@@ -452,6 +431,13 @@ SYSCALL(getegid) {
 
 SYSCALL(getgid) {
   return { 0, 0 };
+}
+
+SYSCALL(exit_group) {
+  __asm__("cli");
+  auto& task = task_manager->CurrentTask();
+  __asm__("sti");
+  return { task.OSStackPointer(), static_cast<int>(arg1) };
 }
 
 SYSCALL(dummy) {
@@ -504,168 +490,241 @@ extern "C" std::array<SyscallFuncType*, numSyscall> syscall_table{
   /* 0x0f */ syscall::MapFile,
 };
 
-extern "C" constexpr unsigned int numLinSyscall = 0x9f;
+extern "C" constexpr unsigned int numLinSyscall = 0xe8;
 extern "C" std::array<SyscallFuncType*, numLinSyscall> syscall_table_lin{
-  /* 0x000 */ syscall::read,
+  /* 0x000 */ syscall::dummy, // read
   /* 0x001 */ syscall::write,
-  /* 0x002 */ syscall::open,
-  /* 0x003 */ syscall::dummy,
-  /* 0x004 */ syscall::dummy,
-  /* 0x005 */ syscall::dummy,
-  /* 0x006 */ syscall::dummy,
-  /* 0x007 */ syscall::dummy,
-  /* 0x008 */ syscall::dummy,
-  /* 0x009 */ syscall::dummy,
-  /* 0x00a */ syscall::dummy,
-  /* 0x00b */ syscall::dummy,
-  /* 0x00c */ syscall::dummy,
-  /* 0x00d */ syscall::dummy,
-  /* 0x00e */ syscall::dummy,
-  /* 0x00f */ syscall::dummy,
-  /* 0x010 */ syscall::dummy,
-  /* 0x011 */ syscall::dummy,
-  /* 0x012 */ syscall::dummy,
-  /* 0x013 */ syscall::dummy,
-  /* 0x014 */ syscall::dummy,
-  /* 0x015 */ syscall::dummy,
-  /* 0x016 */ syscall::dummy,
-  /* 0x017 */ syscall::dummy,
-  /* 0x018 */ syscall::dummy,
-  /* 0x019 */ syscall::dummy,
-  /* 0x01a */ syscall::dummy,
-  /* 0x01b */ syscall::dummy,
-  /* 0x01c */ syscall::dummy,
-  /* 0x01d */ syscall::dummy,
-  /* 0x01e */ syscall::dummy,
-  /* 0x01f */ syscall::dummy,
-  /* 0x020 */ syscall::dummy,
-  /* 0x021 */ syscall::dummy,
-  /* 0x022 */ syscall::dummy,
-  /* 0x023 */ syscall::dummy,
-  /* 0x024 */ syscall::dummy,
-  /* 0x025 */ syscall::dummy,
-  /* 0x026 */ syscall::dummy,
-  /* 0x027 */ syscall::dummy,
-  /* 0x028 */ syscall::dummy,
-  /* 0x029 */ syscall::dummy,
-  /* 0x02a */ syscall::dummy,
-  /* 0x02b */ syscall::dummy,
-  /* 0x02c */ syscall::dummy,
-  /* 0x02d */ syscall::dummy,
-  /* 0x02e */ syscall::dummy,
-  /* 0x02f */ syscall::dummy,
-  /* 0x030 */ syscall::dummy,
-  /* 0x031 */ syscall::dummy,
-  /* 0x032 */ syscall::dummy,
-  /* 0x033 */ syscall::dummy,
-  /* 0x034 */ syscall::dummy,
-  /* 0x035 */ syscall::dummy,
-  /* 0x036 */ syscall::dummy,
-  /* 0x037 */ syscall::dummy,
-  /* 0x038 */ syscall::dummy,
-  /* 0x039 */ syscall::dummy,
-  /* 0x03a */ syscall::dummy,
-  /* 0x03b */ syscall::dummy,
-  /* 0x03c */ syscall::dummy,
-  /* 0x03d */ syscall::dummy,
-  /* 0x03e */ syscall::dummy,
-  /* 0x03f */ syscall::dummy,
-  /* 0x040 */ syscall::dummy,
-  /* 0x041 */ syscall::dummy,
-  /* 0x042 */ syscall::dummy,
-  /* 0x043 */ syscall::dummy,
-  /* 0x044 */ syscall::dummy,
-  /* 0x045 */ syscall::dummy,
-  /* 0x046 */ syscall::dummy,
-  /* 0x047 */ syscall::dummy,
-  /* 0x048 */ syscall::dummy,
-  /* 0x049 */ syscall::dummy,
-  /* 0x04a */ syscall::dummy,
-  /* 0x04b */ syscall::dummy,
-  /* 0x04c */ syscall::dummy,
-  /* 0x04d */ syscall::dummy,
-  /* 0x04e */ syscall::dummy,
-  /* 0x04f */ syscall::dummy,
-  /* 0x050 */ syscall::dummy,
-  /* 0x051 */ syscall::dummy,
-  /* 0x052 */ syscall::dummy,
-  /* 0x053 */ syscall::dummy,
-  /* 0x054 */ syscall::dummy,
-  /* 0x055 */ syscall::dummy,
-  /* 0x056 */ syscall::dummy,
-  /* 0x057 */ syscall::dummy,
-  /* 0x058 */ syscall::dummy,
-  /* 0x059 */ syscall::dummy,
-  /* 0x05a */ syscall::dummy,
-  /* 0x05b */ syscall::dummy,
-  /* 0x05c */ syscall::dummy,
-  /* 0x05d */ syscall::dummy,
-  /* 0x05e */ syscall::dummy,
-  /* 0x05f */ syscall::dummy,
-  /* 0x060 */ syscall::dummy,
-  /* 0x061 */ syscall::dummy,
-  /* 0x062 */ syscall::dummy,
-  /* 0x063 */ syscall::dummy,
-  /* 0x064 */ syscall::dummy,
-  /* 0x065 */ syscall::dummy,
+  /* 0x002 */ syscall::dummy, // open
+  /* 0x003 */ syscall::dummy, // close
+  /* 0x004 */ syscall::dummy, // stat
+  /* 0x005 */ syscall::dummy, // fstat
+  /* 0x006 */ syscall::dummy, // lstat
+  /* 0x007 */ syscall::dummy, // poll
+  /* 0x008 */ syscall::dummy, // lseek
+  /* 0x009 */ syscall::dummy, // mmap
+  /* 0x00a */ syscall::dummy, // mprotect
+  /* 0x00b */ syscall::dummy, // munmap
+  /* 0x00c */ syscall::dummy, // brk
+  /* 0x00d */ syscall::dummy, // rt_sigaction
+  /* 0x00e */ syscall::dummy, // rt_sigprocmask
+  /* 0x00f */ syscall::dummy, // rt_sigreturn
+  /* 0x010 */ syscall::dummy, // ioctl
+  /* 0x011 */ syscall::dummy, // pread
+  /* 0x012 */ syscall::dummy, // pwrite
+  /* 0x013 */ syscall::dummy, // readv
+  /* 0x014 */ syscall::dummy, // writev
+  /* 0x015 */ syscall::dummy, // access
+  /* 0x016 */ syscall::dummy, // pipe
+  /* 0x017 */ syscall::dummy, // select
+  /* 0x018 */ syscall::dummy, // sched_yield
+  /* 0x019 */ syscall::dummy, // mremap
+  /* 0x01a */ syscall::dummy, // msync
+  /* 0x01b */ syscall::dummy, // mincore
+  /* 0x01c */ syscall::dummy, // madvise
+  /* 0x01d */ syscall::dummy, // shmget
+  /* 0x01e */ syscall::dummy, // shmat
+  /* 0x01f */ syscall::dummy, // shmctl
+  /* 0x020 */ syscall::dummy, // dup
+  /* 0x021 */ syscall::dummy, // dup2
+  /* 0x022 */ syscall::dummy, // pause
+  /* 0x023 */ syscall::dummy, // nanosleep
+  /* 0x024 */ syscall::dummy, // getitimer
+  /* 0x025 */ syscall::dummy, // alarm
+  /* 0x026 */ syscall::dummy, // setitimer
+  /* 0x027 */ syscall::dummy, // getpid
+  /* 0x028 */ syscall::dummy, // sendfile
+  /* 0x029 */ syscall::dummy, // socket
+  /* 0x02a */ syscall::dummy, // connect
+  /* 0x02b */ syscall::dummy, // accept
+  /* 0x02c */ syscall::dummy, // sendto
+  /* 0x02d */ syscall::dummy, // recvfrom
+  /* 0x02e */ syscall::dummy, // sendmsg
+  /* 0x02f */ syscall::dummy, // recvmsg
+  /* 0x030 */ syscall::dummy, // shutdown
+  /* 0x031 */ syscall::dummy, // bind
+  /* 0x032 */ syscall::dummy, // listen
+  /* 0x033 */ syscall::dummy, // getsockname
+  /* 0x034 */ syscall::dummy, // getpeername
+  /* 0x035 */ syscall::dummy, // socketpair
+  /* 0x036 */ syscall::dummy, // setsockopt
+  /* 0x037 */ syscall::dummy, // getsockopt
+  /* 0x038 */ syscall::dummy, // clone
+  /* 0x039 */ syscall::dummy, // fork
+  /* 0x03a */ syscall::dummy, // vfork
+  /* 0x03b */ syscall::dummy, // execve
+  /* 0x03c */ syscall::dummy, // exit
+  /* 0x03d */ syscall::dummy, // wait4
+  /* 0x03e */ syscall::dummy, // kill
+  /* 0x03f */ syscall::dummy, // uname
+  /* 0x040 */ syscall::dummy, // semget
+  /* 0x041 */ syscall::dummy, // semop
+  /* 0x042 */ syscall::dummy, // semctl
+  /* 0x043 */ syscall::dummy, // shmdt
+  /* 0x044 */ syscall::dummy, // msgget
+  /* 0x045 */ syscall::dummy, // msgsnd
+  /* 0x046 */ syscall::dummy, // msgrcv
+  /* 0x047 */ syscall::dummy, // msgctl
+  /* 0x048 */ syscall::dummy, // fcntl
+  /* 0x049 */ syscall::dummy, // flock
+  /* 0x04a */ syscall::dummy, // fsync
+  /* 0x04b */ syscall::dummy, // fdatasync
+  /* 0x04c */ syscall::dummy, // truncate
+  /* 0x04d */ syscall::dummy, // ftruncate
+  /* 0x04e */ syscall::dummy, // getdents
+  /* 0x04f */ syscall::dummy, // getcwd
+  /* 0x050 */ syscall::dummy, // chdir
+  /* 0x051 */ syscall::dummy, // fchdir
+  /* 0x052 */ syscall::dummy, // rename
+  /* 0x053 */ syscall::dummy, // mkdir
+  /* 0x054 */ syscall::dummy, // rmdir
+  /* 0x055 */ syscall::dummy, // creat
+  /* 0x056 */ syscall::dummy, // link
+  /* 0x057 */ syscall::dummy, // unlink
+  /* 0x058 */ syscall::dummy, // symlink
+  /* 0x059 */ syscall::dummy, // readlink
+  /* 0x05a */ syscall::dummy, // chmod
+  /* 0x05b */ syscall::dummy, // fchmod
+  /* 0x05c */ syscall::dummy, // chown
+  /* 0x05d */ syscall::dummy, // fchown
+  /* 0x05e */ syscall::dummy, // lchown
+  /* 0x05f */ syscall::dummy, // umask
+  /* 0x060 */ syscall::dummy, // gettimeofday
+  /* 0x061 */ syscall::dummy, // getrlimit
+  /* 0x062 */ syscall::dummy, // getrusage
+  /* 0x063 */ syscall::dummy, // sysinfo
+  /* 0x064 */ syscall::dummy, // times
+  /* 0x065 */ syscall::dummy, // ptrace
   /* 0x066 */ syscall::getuid,
-  /* 0x067 */ syscall::dummy,
+  /* 0x067 */ syscall::dummy, // syslog
   /* 0x068 */ syscall::getgid,
-  /* 0x069 */ syscall::dummy,
-  /* 0x06a */ syscall::dummy,
+  /* 0x069 */ syscall::dummy, //  setuid
+  /* 0x06a */ syscall::dummy, //  setgid
   /* 0x06b */ syscall::geteuid,
   /* 0x06c */ syscall::getegid,
-  /* 0x06d */ syscall::dummy,
-  /* 0x06e */ syscall::dummy,
-  /* 0x06f */ syscall::dummy,
-  /* 0x070 */ syscall::dummy,
-  /* 0x071 */ syscall::dummy,
-  /* 0x072 */ syscall::dummy,
-  /* 0x073 */ syscall::dummy,
-  /* 0x074 */ syscall::dummy,
-  /* 0x075 */ syscall::dummy,
-  /* 0x076 */ syscall::dummy,
-  /* 0x077 */ syscall::dummy,
-  /* 0x078 */ syscall::dummy,
-  /* 0x079 */ syscall::dummy,
-  /* 0x07a */ syscall::dummy,
-  /* 0x07b */ syscall::dummy,
-  /* 0x07c */ syscall::dummy,
-  /* 0x07d */ syscall::dummy,
-  /* 0x07e */ syscall::dummy,
-  /* 0x07f */ syscall::dummy,
-  /* 0x080 */ syscall::dummy,
-  /* 0x081 */ syscall::dummy,
-  /* 0x082 */ syscall::dummy,
-  /* 0x083 */ syscall::dummy,
-  /* 0x084 */ syscall::dummy,
-  /* 0x085 */ syscall::dummy,
-  /* 0x086 */ syscall::dummy,
-  /* 0x087 */ syscall::dummy,
-  /* 0x088 */ syscall::dummy,
-  /* 0x089 */ syscall::dummy,
-  /* 0x08a */ syscall::dummy,
-  /* 0x08b */ syscall::dummy,
-  /* 0x08c */ syscall::dummy,
-  /* 0x08d */ syscall::dummy,
-  /* 0x08e */ syscall::dummy,
-  /* 0x08f */ syscall::dummy,
-  /* 0x090 */ syscall::dummy,
-  /* 0x091 */ syscall::dummy,
-  /* 0x092 */ syscall::dummy,
-  /* 0x093 */ syscall::dummy,
-  /* 0x094 */ syscall::dummy,
-  /* 0x095 */ syscall::dummy,
-  /* 0x096 */ syscall::dummy,
-  /* 0x097 */ syscall::dummy,
-  /* 0x098 */ syscall::dummy,
-  /* 0x099 */ syscall::dummy,
-  /* 0x09a */ syscall::dummy,
-  /* 0x09b */ syscall::dummy,
-  /* 0x09c */ syscall::dummy,
-  /* 0x09d */ syscall::dummy,
-  /* 0x09e */ syscall::dummy,
-  // /* 0x09e */ syscall::arch_prctl,
+  /* 0x06d */ syscall::dummy, // setpgid
+  /* 0x06e */ syscall::dummy, // getppid
+  /* 0x06f */ syscall::dummy, // getpgrp
+  /* 0x070 */ syscall::dummy, // setsid
+  /* 0x071 */ syscall::dummy, // setreuid
+  /* 0x072 */ syscall::dummy, // setregid
+  /* 0x073 */ syscall::dummy, // getgroups
+  /* 0x074 */ syscall::dummy, // setgroups
+  /* 0x075 */ syscall::dummy, // setresuid
+  /* 0x076 */ syscall::dummy, // getresuid
+  /* 0x077 */ syscall::dummy, // setresgid
+  /* 0x078 */ syscall::dummy, // getresgid
+  /* 0x079 */ syscall::dummy, // getpgid
+  /* 0x07a */ syscall::dummy, // setfsuid
+  /* 0x07b */ syscall::dummy, // setfsgid
+  /* 0x07c */ syscall::dummy, // getsid
+  /* 0x07d */ syscall::dummy, // capget
+  /* 0x07e */ syscall::dummy, // capset
+  /* 0x07f */ syscall::dummy, // rt_sigpending
+  /* 0x080 */ syscall::dummy, // rt_sigtimedwait
+  /* 0x081 */ syscall::dummy, // rt_sigqueueinfo
+  /* 0x082 */ syscall::dummy, // rt_sigsuspend
+  /* 0x083 */ syscall::dummy, // sigaltstack
+  /* 0x084 */ syscall::dummy, // utime
+  /* 0x085 */ syscall::dummy, // mknod
+  /* 0x086 */ syscall::dummy, // uselib
+  /* 0x087 */ syscall::dummy, // personality
+  /* 0x088 */ syscall::dummy, // ustat
+  /* 0x089 */ syscall::dummy, // statfs
+  /* 0x08a */ syscall::dummy, // fstatfs
+  /* 0x08b */ syscall::dummy, // sysfs
+  /* 0x08c */ syscall::dummy, // getpriority
+  /* 0x08d */ syscall::dummy, // setpriority
+  /* 0x08e */ syscall::dummy, // sched_setparam
+  /* 0x08f */ syscall::dummy, // sched_getparam
+  /* 0x090 */ syscall::dummy, // sched_setscheduler
+  /* 0x091 */ syscall::dummy, // sched_getscheduler
+  /* 0x092 */ syscall::dummy, // sched_get_priority_max
+  /* 0x093 */ syscall::dummy, // sched_get_priority_min
+  /* 0x094 */ syscall::dummy, // sched_rr_get_interval
+  /* 0x095 */ syscall::dummy, // mlock
+  /* 0x096 */ syscall::dummy, // munlock
+  /* 0x097 */ syscall::dummy, // mlockall
+  /* 0x098 */ syscall::dummy, // munlockall
+  /* 0x099 */ syscall::dummy, // vhangup
+  /* 0x09a */ syscall::dummy, // modify_ldt
+  /* 0x09b */ syscall::dummy, // pivot_root
+  /* 0x09c */ syscall::dummy, // _sysctl
+  /* 0x09d */ syscall::dummy, // prctl
+  /* 0x09e */ syscall::dummy, // arch_prctl
+  /* 0x09f */ syscall::dummy, // adjtimex
+  /* 0x0a0 */ syscall::dummy, // setrlimit
+  /* 0x0a1 */ syscall::dummy, // chroot
+  /* 0x0a2 */ syscall::dummy, // sync
+  /* 0x0a3 */ syscall::dummy, // acct
+  /* 0x0a4 */ syscall::dummy, // settimeofday
+  /* 0x0a5 */ syscall::dummy, // mount
+  /* 0x0a6 */ syscall::dummy, // umount2
+  /* 0x0a7 */ syscall::dummy, // swapon
+  /* 0x0a8 */ syscall::dummy, // swapoff
+  /* 0x0a9 */ syscall::dummy, // reboot
+  /* 0x0aa */ syscall::dummy, // sethostname
+  /* 0x0ab */ syscall::dummy, // setdomainname
+  /* 0x0ac */ syscall::dummy, // iopl
+  /* 0x0ad */ syscall::dummy, // ioperm
+  /* 0x0ae */ syscall::dummy, // create_module
+  /* 0x0af */ syscall::dummy, // init_module
+  /* 0x0b0 */ syscall::dummy, // delete_module
+  /* 0x0b1 */ syscall::dummy, // get_kernel_syms
+  /* 0x0b2 */ syscall::dummy, // query_module
+  /* 0x0b3 */ syscall::dummy, // quotactl
+  /* 0x0b4 */ syscall::dummy, // nfsservctl
+  /* 0x0b5 */ syscall::dummy, // getpmsg
+  /* 0x0b6 */ syscall::dummy, // putpmsg
+  /* 0x0b7 */ syscall::dummy, // afs_syscall
+  /* 0x0b8 */ syscall::dummy, // tuxcall
+  /* 0x0b9 */ syscall::dummy, // security
+  /* 0x0ba */ syscall::dummy, // gettid
+  /* 0x0bb */ syscall::dummy, // readahead
+  /* 0x0bc */ syscall::dummy, // setxattr
+  /* 0x0bd */ syscall::dummy, // lsetxattr
+  /* 0x0be */ syscall::dummy, // fsetxattr
+  /* 0x0bf */ syscall::dummy, // getxattr
+  /* 0x0c0 */ syscall::dummy, // lgetxattr
+  /* 0x0c1 */ syscall::dummy, // fgetxattr
+  /* 0x0c2 */ syscall::dummy, // listxattr
+  /* 0x0c3 */ syscall::dummy, // llistxattr
+  /* 0x0c4 */ syscall::dummy, // flistxattr
+  /* 0x0c5 */ syscall::dummy, // removexattr
+  /* 0x0c6 */ syscall::dummy, // lremovexattr
+  /* 0x0c7 */ syscall::dummy, // fremovexattr
+  /* 0x0c8 */ syscall::dummy, // tkill
+  /* 0x0c9 */ syscall::dummy, // time
+  /* 0x0ca */ syscall::dummy, // futex
+  /* 0x0cb */ syscall::dummy, // sched_setaffinity
+  /* 0x0cc */ syscall::dummy, // sched_getaffinity
+  /* 0x0cd */ syscall::dummy, // set_thread_area
+  /* 0x0ce */ syscall::dummy, // io_setup
+  /* 0x0cf */ syscall::dummy, // io_destroy
+  /* 0x0d0 */ syscall::dummy, // io_getevents
+  /* 0x0d1 */ syscall::dummy, // io_submit
+  /* 0x0d2 */ syscall::dummy, // io_cancel
+  /* 0x0d3 */ syscall::dummy, // get_thread_area
+  /* 0x0d4 */ syscall::dummy, // lookup_dcookie
+  /* 0x0d5 */ syscall::dummy, // epoll_create
+  /* 0x0d6 */ syscall::dummy, // epoll_ctl_old
+  /* 0x0d7 */ syscall::dummy, // epoll_wait_old
+  /* 0x0d8 */ syscall::dummy, // remap_file_pages
+  /* 0x0d9 */ syscall::dummy, // getdents64
+  /* 0x0da */ syscall::dummy, // set_tid_address
+  /* 0x0db */ syscall::dummy, // restart_syscall
+  /* 0x0dc */ syscall::dummy, // semtimedop
+  /* 0x0dd */ syscall::dummy, // fadvise64
+  /* 0x0de */ syscall::dummy, // timer_create
+  /* 0x0df */ syscall::dummy, // timer_settime
+  /* 0x0e0 */ syscall::dummy, // timer_gettime
+  /* 0x0e1 */ syscall::dummy, // timer_getoverrun
+  /* 0x0e2 */ syscall::dummy, // timer_delete
+  /* 0x0e3 */ syscall::dummy, // clock_settime
+  /* 0x0e4 */ syscall::dummy, // clock_gettime
+  /* 0x0e5 */ syscall::dummy, // clock_getres
+  /* 0x0e6 */ syscall::dummy, // clock_nanosleep
+  /* 0x0e7 */ syscall::exit_group,
+  /* 0x0e7 */ //syscall::dummy,
 };
 
 

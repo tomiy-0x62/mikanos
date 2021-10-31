@@ -362,6 +362,9 @@ SyscallEntry:  ; void SyscallEntry(void);
     cmp esi, 0x80000002
     je  .exit
 
+    cmp esi, 0x000000e7
+    je  .exit
+
     pop r11
     pop rcx
     pop rbp
