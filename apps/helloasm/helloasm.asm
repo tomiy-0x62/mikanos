@@ -4,11 +4,13 @@ section .data
 section .text
     global _start
 _start:
-    mov     rax, 1
-    mov     rdi, 1
-    mov     rsi, msg
-    mov     rdx, 14 
+    ; ssize_t write(int fd, const void *buf, size_t count);
+    mov     rax, 1 ; write systemcall
+    mov     rdi, 1 ; int fd
+    mov     rsi, msg ; const void *buf
+    mov     rdx, 14 ; size_t count
     syscall
-    mov    rax, 0xe7 ; exit_group 
-    mov    rdi, 0
+    ; void exit_group(int status);
+    mov    rax, 0xe7 ; exit_group systemcall
+    mov    rdi, 0 ; int status
     syscall
