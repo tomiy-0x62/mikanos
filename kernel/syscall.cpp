@@ -433,6 +433,10 @@ SYSCALL(getgid) {
   return { 0, 0 };
 }
 
+SYSCALL(arch_prctl) {
+  return { 1, 0 };
+}
+
 SYSCALL(exit_group) {
   __asm__("cli");
   auto& task = task_manager->CurrentTask();
@@ -443,9 +447,11 @@ SYSCALL(exit_group) {
 SYSCALL(dummy) {
   unsigned int syscallNum = getEAX();
   const char *msg1 = "Error: Invalid Syscall Number\n";
+  const char *msg2 = "Dummy Syscall called\n";
   char s[100];
   int length = std::sprintf(s, "There is no Syscall Number: 0x%08X\n", syscallNum);
   syscall::PutString(1, (uint64_t)msg1, strlen(msg1), 1, 1, 1);
+  syscall::PutString(1, (uint64_t)msg2, strlen(msg2), 1, 1, 1);
   syscall::PutString(1, (uint64_t)s, length, 1, 1, 1);
   while (true) __asm__("hlt");
   return { 0, 0 };
@@ -465,6 +471,20 @@ extern "C" syscall::Result invalid_Syscall_num(unsigned int syscallNum){
   syscall::PutString(1, (uint64_t)msg1, strlen(msg1), 1, 1, 1);
   syscall::PutString(1, (uint64_t)s, length, 1, 1, 1);
   return syscall::Exit(-1, 1, 1, 1, 1, 1);
+}
+
+extern "C" unsigned int LogSyscall() {
+
+  unsigned int syscallNum = getEAX();
+
+  char s[100];
+  int length = std::sprintf(s, "Called Syscall Number: 0x%08X\n", syscallNum);
+  const auto len = strlen(s);
+  if (len > 1024) {
+    return syscallNum;
+  }
+  Log(kError, "%s", s);
+  return syscallNum;
 }
 
 using SyscallFuncType = syscall::Result (uint64_t, uint64_t, uint64_t,
@@ -650,7 +670,7 @@ extern "C" std::array<SyscallFuncType*, numLinSyscall> syscall_table_lin{
   /* 0x09b */ syscall::dummy, // pivot_root
   /* 0x09c */ syscall::dummy, // _sysctl
   /* 0x09d */ syscall::dummy, // prctl
-  /* 0x09e */ syscall::dummy, // arch_prctl
+  /* 0x09e */ syscall::arch_prctl,
   /* 0x09f */ syscall::dummy, // adjtimex
   /* 0x0a0 */ syscall::dummy, // setrlimit
   /* 0x0a1 */ syscall::dummy, // chroot

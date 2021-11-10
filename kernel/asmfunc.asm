@@ -295,6 +295,7 @@ extern syscall_table_lin
 extern numSyscall
 extern numLinSyscall
 extern invalid_Syscall_num
+extern LogSyscall
 global SyscallEntry
 SyscallEntry:  ; void SyscallEntry(void);
     push rbp
@@ -323,6 +324,22 @@ SyscallEntry:  ; void SyscallEntry(void);
     pop rdx
     pop rax
     and rsp, 0xfffffffffffffff0
+
+    push rdi
+    push rsi
+    push rdx
+    push rcx
+    push r8
+    push r9
+
+    call LogSyscall
+
+    pop r9
+    pop r8
+    pop rcx
+    pop rdx
+    pop rsi
+    pop rdi
     
     test eax, 0x80000000 ; eax & 0x80000000 の結果が zero かどうかを判定 0x10e503
     jz .LinSyscall
