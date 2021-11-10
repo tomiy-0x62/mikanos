@@ -6,7 +6,7 @@ CXXFLAGS = -Og -Wall -g -static -fuse-ld=lld -z norelro -L/lib/x86_64-linux-gnu
 # CC = gcc # Cンパイラーを指定
 # CXX = g++ # C++コンパイラーを指
 
-LDFLAGS = -z norelro -static --image-base=0x7000000# -L/home/ryosuke/glibc/lib -z norelro -static -v # -image-base 0xffff800000000000
+LDFLAGS = -z norelro -static --image-base=0x8000000# -L/home/ryosuke/glibc/lib -z norelro -static -v # -image-base 0xffff800000000000
 
 .PHONY: all
 all: $(TARGET)
@@ -16,10 +16,10 @@ $(TARGET): $(OBJS) Makefile
 #	ld.lld $(LDFLAGS) -o $@ $(OBJS) -lc -lm # -lc++abi -lc++
 
 %.o: %.c Makefile
-	gcc $(CPPFLAGS) $(CFLAGS) $< -o $@ -v -Wl,--image-base=0x7000000 
+	gcc $(CPPFLAGS) $(CFLAGS) $< -o $@ -v -Wl,--image-base=0x8000000 
 
 %.o: %.cpp Makefile
-	g++ $(CPPFLAGS) $(CXXFLAGS) $< -o $@ -v -Wl,--image-base=0x7000000
+	g++ $(CPPFLAGS) $(CXXFLAGS) $< -o $@ -v -Wl,--image-base=0x8000000
 
 %.o: %.asm Makefile
 	nasm -f elf64 -o $@ $<
