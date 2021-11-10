@@ -25,4 +25,8 @@ echo "# IntHandlerUD" >> ./gdb_init
 nm -C ./kernel/kernel.elf | grep IntHandlerUD | awk '{printf "b *0x%s", $1}' >> ./gdb_init
 echo "" >> ./gdb_init
 
+echo "#IntHandlerBP" >> ./gdb_init
+nm -C ./kernel/kernel.elf | grep IntHandlerBP | awk '{printf "b *0x%s", $1}' >> ./gdb_init
+echo "" >> ./gdb_init
+
 gdb -x gdb_init
