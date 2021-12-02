@@ -9,7 +9,7 @@ file ./kernel/kernel.elf
 set disassembly-flavor intel
 
 # ブレークするごとに逆アセンブル結果を表示
-disp/5i \$pc
+disp/3i \$pc
 " >> ./gdb_init
 
 
@@ -25,8 +25,11 @@ echo "# IntHandlerUD" >> ./gdb_init
 nm -C ./kernel/kernel.elf | grep IntHandlerUD | awk '{printf "b *0x%s", $1}' >> ./gdb_init
 echo "" >> ./gdb_init
 
-echo "#IntHandlerBP" >> ./gdb_init
+echo "# IntHandlerBP" >> ./gdb_init
 nm -C ./kernel/kernel.elf | grep IntHandlerBP | awk '{printf "b *0x%s", $1}' >> ./gdb_init
 echo "" >> ./gdb_init
+
+echo "# syscall:arch_prctl" >> ./gdb_init
+nm -C ./kernel/kernel.elf | grep syscall::arch_prctl | awk '{printf "b *0x%s", $1}' >> ./gdb_init
 
 gdb -x gdb_init
