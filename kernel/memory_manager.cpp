@@ -123,6 +123,19 @@ void InitializeMemoryManager(const MemoryMap& memory_map) {
           desc->number_of_pages * kUEFIPageSize / kBytesPerFrame);
     }
   }
+  // 0x8000000~0x87FE000 がmark済みか確認
+  // mark済みであればフリーズさせる
+
+  for (int i = 0; i < 2048; i++){
+    if (memory_manager->GetBit(FrameID{(0x8000000 / kBytesPerFrame) + i})) {
+      while (true) __asm__("hlt");
+    } else {
+      // ok
+    }
+  }
+  // 0x8000000~0x87FE000 をmark
+  memory_manager->MarkAllocated(FrameID{0x8000000 / kBytesPerFrame}, 2048);
+
   memory_manager->SetMemoryRange(FrameID{1}, FrameID{available_end / kBytesPerFrame});
 
   if (auto err = InitializeHeap(*memory_manager)) {

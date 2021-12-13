@@ -85,6 +85,8 @@ class BitmapMemoryManager {
    */
   MemoryStat Stat() const;
 
+  bool GetBit(FrameID frame) const;
+
  private:
   std::array<MapLineType, kFrameCount / kBitsPerMapLine> alloc_map_;
   /** @brief このメモリマネージャで扱うメモリ範囲の始点． */
@@ -92,7 +94,6 @@ class BitmapMemoryManager {
   /** @brief このメモリマネージャで扱うメモリ範囲の終点．最終フレームの次のフレーム． */
   FrameID range_end_;
 
-  bool GetBit(FrameID frame) const;
   void SetBit(FrameID frame, bool allocated);
 };
 
