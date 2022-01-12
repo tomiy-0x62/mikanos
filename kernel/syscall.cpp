@@ -417,6 +417,24 @@ SYSCALL(write) {
   return { task.Files()[fd]->Write(s, len), 0 };
 }
 
+SYSCALL(brk) {
+  const size_t p_break = arg1;
+  // const int flags = arg2;
+  __asm__("cli");
+  auto& task = task_manager->CurrentTask();
+  __asm__("sti");
+
+  uint64_t dp_end;
+  if (p_break == 0) {
+    dp_end = task.DPagingEnd();
+    
+  } else {
+    dp_end = p_break;
+  }
+  task.SetDPagingEnd(dp_end);
+  return { dp_end, 0 };
+}
+
 SYSCALL(getuid) {
   return { 0, 0 };
 }
@@ -434,7 +452,7 @@ SYSCALL(getgid) {
 }
 
 SYSCALL(arch_prctl) {
-  return { 1, 0 };
+  return { 0, 0 };
 }
 
 SYSCALL(exit_group) {
@@ -524,7 +542,7 @@ extern "C" std::array<SyscallFuncType*, numLinSyscall> syscall_table_lin{
   /* 0x009 */ syscall::dummy, // mmap
   /* 0x00a */ syscall::dummy, // mprotect
   /* 0x00b */ syscall::dummy, // munmap
-  /* 0x00c */ syscall::dummy, // brk
+  /* 0x00c */ syscall::brk,
   /* 0x00d */ syscall::dummy, // rt_sigaction
   /* 0x00e */ syscall::dummy, // rt_sigprocmask
   /* 0x00f */ syscall::dummy, // rt_sigreturn

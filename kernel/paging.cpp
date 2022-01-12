@@ -28,6 +28,10 @@ void SetupIdentityPageTable() {
     }
   }
 
+  for (int i_pd =64; i_pd < 115; ++i_pd) {
+    page_directory[0][i_pd] = 0;
+  }
+
   ResetCR3();
   SetCR0(GetCR0() & 0xfffeffff); // Clear WP
 }
@@ -112,6 +116,9 @@ Error CleanPageMap(
 
     if (entry.bits.writable) {
       const auto entry_addr = reinterpret_cast<uintptr_t>(entry.Pointer());
+      if (entry_addr > 0x0000'0000'0e60'0000 || entry_addr < 0xffff'8000'0000'0000){
+        continue;
+      }
       const FrameID map_frame{entry_addr / kBytesPerFrame};
       if (auto err = memory_manager->Free(map_frame, 1)) {
         return err;
