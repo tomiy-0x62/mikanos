@@ -192,7 +192,7 @@ RestoreContext:  ; void RestoreContext(void* task_context);
     o64 iret
 
 global CallApp
-CallApp:  ; int CallApp(int argc, char** argv, uint16_t ss,
+CallApp:  ; int CallApp({int argc, char** argv, char** auxvec, uint16_t ss,
           ;             uint64_t rip, uint64_t rsp, uint64_t* os_stack_ptr);
     push rbx
     push rbp
@@ -200,13 +200,20 @@ CallApp:  ; int CallApp(int argc, char** argv, uint16_t ss,
     push r13
     push r14
     push r15
+    mov r9, [rdi+48]  ; os_stack_ptr
     mov [r9], rsp ; OS 用のスタックポインタを保存
 
+    mov dx, word [rdi+24]  ; ss
+    mov rcx, qword [rdi+32]  ; rip
+    mov r8, qword [rdi+40]  ; rsp
     push rdx  ; SS
     push r8   ; RSP
     add rdx, 8
     push rdx  ; CS
     push rcx  ; RIP
+    mov rcx, qword [rdi+24] ; アプリの第三引数 auxvec
+    mov rdx, qword [rdi+16]  ; アプリの第二引数 argv
+    mov edi, dword [rdi]  ; アプリの第一引数 argc
     o64 retf
     ; アプリケーションが終了してもここには来ない
 

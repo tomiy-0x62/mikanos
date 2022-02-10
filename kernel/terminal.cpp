@@ -672,9 +672,13 @@ WithError<int> Terminal::ExecuteFile(fat::DirectoryEntry& file_entry,
                         LinearAddress4Level{addr});
   SetupFS(addr);
 
-  int ret = CallApp(argc.value, argv, 3 << 3 | 3, app_load.entry,
+  char **envp_arxvec = {};
+
+  argCallApp args = {argc.value, argv, envp_arxvec, 3 << 3 | 3, app_load.entry,
                     stack_frame_addr.value + stack_size - 8,
-                    &task.OSStackPointer());
+                    &task.OSStackPointer()};
+
+  int ret = CallApp(&args); 
 
   task.Files().clear();
   task.FileMaps().clear();
