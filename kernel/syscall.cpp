@@ -487,13 +487,19 @@ SYSCALL(exit_group) {
   return { task.OSStackPointer(), static_cast<int>(arg1) };
 }
 
+/*uint64_t arg1, uint64_t arg2, uint64_t arg3, 
+      uint64_t arg4, uint64_t arg5, uint64_t arg6*/
+
 SYSCALL(dummy) {
   unsigned int syscallNum = getEAX();
   const char *msg1 = "Dummy Syscall called\n";
   char msg2[100];
-  int length = std::sprintf(msg2, "System Call Number: 0x%08X is not implemented.\n", syscallNum);
+  char msg3[100];
+  int length2 = std::sprintf(msg2, "arg1:0x%016X arg2:0x%016X\narg3:0x%016X arg4:0x%016X\narg5:0x%016X arg6:0x%016X\n", arg1, arg2, arg3, arg4, arg5, arg6);
+  int length3 = std::sprintf(msg3, "System Call Number: 0x%08X is not implemented.\n", syscallNum);
   syscall::PutString(1, (uint64_t)msg1, strlen(msg1), 1, 1, 1);
-  syscall::PutString(1, (uint64_t)msg2, length, 1, 1, 1);
+  syscall::PutString(1, (uint64_t)msg2, length2, 1, 1, 1);
+  syscall::PutString(1, (uint64_t)msg3, length3, 1, 1, 1);
   while (true) __asm__("hlt");
   return { 0, 0 };
 }
