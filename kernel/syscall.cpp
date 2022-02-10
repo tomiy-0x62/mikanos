@@ -489,13 +489,11 @@ SYSCALL(exit_group) {
 
 SYSCALL(dummy) {
   unsigned int syscallNum = getEAX();
-  const char *msg1 = "Error: Invalid Syscall Number\n";
-  const char *msg2 = "Dummy Syscall called\n";
-  char s[100];
-  int length = std::sprintf(s, "There is no Syscall Number: 0x%08X\n", syscallNum);
+  const char *msg1 = "Dummy Syscall called\n";
+  char msg2[100];
+  int length = std::sprintf(msg2, "System Call Number: 0x%08X is not implemented.\n", syscallNum);
   syscall::PutString(1, (uint64_t)msg1, strlen(msg1), 1, 1, 1);
-  syscall::PutString(1, (uint64_t)msg2, strlen(msg2), 1, 1, 1);
-  syscall::PutString(1, (uint64_t)s, length, 1, 1, 1);
+  syscall::PutString(1, (uint64_t)msg2, length, 1, 1, 1);
   while (true) __asm__("hlt");
   return { 0, 0 };
 }
