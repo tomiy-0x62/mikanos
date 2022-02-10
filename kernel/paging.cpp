@@ -181,6 +181,19 @@ Error CopyOnePage(uint64_t causal_addr) {
 
 } // namespace
 
+Error SetUserBitTrue(PageMapEntry* table, int part,
+                     LinearAddress4Level addr) {
+  if (part == 2) {
+    const auto i = addr.Part(part);
+    table[i].bits.user = 1;
+    InvalidateTLB(addr.value);
+    return MAKE_ERROR(Error::kSuccess);
+  }
+
+  const auto i = addr.Part(part);
+  return SetUserBitTrue(table[i].Pointer(), part - 1, addr);
+}
+
 WithError<PageMapEntry*> NewPageMap() {
   auto frame = memory_manager->Allocate(1);
   if (frame.error) {

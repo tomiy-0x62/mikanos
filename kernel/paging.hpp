@@ -89,6 +89,8 @@ union PageMapEntry {
   }
 };
 
+Error SetUserBitTrue(PageMapEntry* table, int part,
+                     LinearAddress4Level addr);
 WithError<PageMapEntry*> NewPageMap();
 Error FreePageMap(PageMapEntry* table);
 Error SetupPageMaps(LinearAddress4Level addr, size_t num_4kpages,

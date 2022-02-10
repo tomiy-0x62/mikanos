@@ -71,6 +71,11 @@ SetDSAll:
     mov gs, di
     ret
 
+global SetFS  ; void SetFS(uint16_t value);
+SetFS:
+    mov fs, di
+    ret
+
 global GetCR0  ; uint64_t GetCR0();
 GetCR0:
     mov rax, cr0

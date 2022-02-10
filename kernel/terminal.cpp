@@ -8,6 +8,7 @@
 #include "layer.hpp"
 #include "pci.hpp"
 #include "asmfunc.h"
+#include "segment.hpp"
 #include "elf.hpp"
 #include "memory_manager.hpp"
 #include "paging.hpp"
@@ -663,6 +664,13 @@ WithError<int> Terminal::ExecuteFile(fat::DirectoryEntry& file_entry,
   }
 
   task.SetFileMapEnd(stack_frame_addr.value);
+
+  extern std::array<SegmentDescriptor, 8> gdt;                                                                                                                       
+  auto frame = memory_manager->Allocate(1);                                                                                                                          
+  uint32_t addr = reinterpret_cast<uint64_t>(frame.value.Frame());                                                                                                   
+  SetUserBitTrue(reinterpret_cast<PageMapEntry*>(GetCR3()), 4,                                                                                                       
+                        LinearAddress4Level{addr});
+  SetupFS(addr);
 
   int ret = CallApp(argc.value, argv, 3 << 3 | 3, app_load.entry,
                     stack_frame_addr.value + stack_size - 8,

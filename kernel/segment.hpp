@@ -47,5 +47,6 @@ const uint16_t kKernelDS = 0;
 const uint16_t kTSS = 5 << 3;
 
 void SetupSegments();
+void SetupFS(uint32_t addr);
 void InitializeSegmentation();
 void InitializeTSS();

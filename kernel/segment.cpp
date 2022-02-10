@@ -5,8 +5,8 @@
 #include "logger.hpp"
 #include "memory_manager.hpp"
 
+std::array<SegmentDescriptor, 8> gdt;
 namespace {
-  std::array<SegmentDescriptor, 7> gdt;
   std::array<uint32_t, 26> tss;
 
   static_assert((kTSS >> 3) + 1 < gdt.size());
@@ -77,6 +77,11 @@ void SetupSegments() {
   SetDataSegment(gdt[3], DescriptorType::kReadWrite, 3, 0, 0xfffff);
   SetCodeSegment(gdt[4], DescriptorType::kExecuteRead, 3, 0, 0xfffff);
   LoadGDT(sizeof(gdt) - 1, reinterpret_cast<uintptr_t>(&gdt[0]));
+}
+
+void SetupFS(uint32_t addr) {
+  SetDataSegment(gdt[7], DescriptorType::kReadWrite, 3, addr, 0xfffff);
+  SetFS(7<<3);
 }
 
 void InitializeSegmentation() {
