@@ -435,6 +435,31 @@ SYSCALL(brk) {
   return { dp_end, 0 };
 }
 
+struct utsname {
+  char sysname[65];    /* Operating system name (e.g., "Linux") */
+  char nodename[65];   /* Name within "some implementation-defined
+                        network" */
+  char release[65];    /* Operating system release (e.g., "2.6.28") */
+  char version[65];    /* Operating system version */
+  char machine[65];    /* Hardware identifier */
+  #ifdef _GNU_SOURCE
+  char domainname[65]; /* NIS or YP domain name */
+  #endif
+};
+
+SYSCALL(uname) {
+  // const size_t p_break = arg1;
+  struct utsname *buf = reinterpret_cast<struct utsname*>(arg1);
+
+  strcpy(buf->sysname, "mikanOS");
+  strcpy(buf->nodename, "unknow");
+  strcpy(buf->release, "unknow");
+  strcpy(buf->version, "unknow");
+  strcpy(buf->machine, "unknow");
+
+  return { 0, 0 };
+}
+
 SYSCALL(getuid) {
   return { 0, 0 };
 }
@@ -593,7 +618,7 @@ extern "C" std::array<SyscallFuncType*, numLinSyscall> syscall_table_lin{
   /* 0x03c */ syscall::dummy, // exit
   /* 0x03d */ syscall::dummy, // wait4
   /* 0x03e */ syscall::dummy, // kill
-  /* 0x03f */ syscall::dummy, // uname
+  /* 0x03f */ syscall::uname,
   /* 0x040 */ syscall::dummy, // semget
   /* 0x041 */ syscall::dummy, // semop
   /* 0x042 */ syscall::dummy, // semctl
