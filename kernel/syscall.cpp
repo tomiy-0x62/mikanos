@@ -435,6 +435,40 @@ SYSCALL(brk) {
   return { dp_end, 0 };
 }
 
+struct iovec {
+  void  *iov_base;    /* Starting address */
+  size_t iov_len;     /* Number of bytes to transfer */
+};
+
+SYSCALL(writev) {
+  // ssize_t writev(int fd, const struct iovec *iov, int iovcnt);
+
+  const auto fd = arg1;
+  const struct iovec* iov = reinterpret_cast<const struct iovec *>(arg2);
+  int iovcnt = arg3;
+  uint64_t writedsize = 0;
+
+  for (int i = 0; i < iovcnt; i++) {
+    const auto len = iov->iov_len;
+    const char* s = reinterpret_cast<const char *>(iov->iov_base);
+    if (len > 1024) {
+      return { 0, E2BIG };
+    }
+
+    __asm__("cli");
+    auto& task = task_manager->CurrentTask();
+    __asm__("sti");
+
+    if (fd < 0 || task.Files().size() <= fd || !task.Files()[fd]) {
+      return { writedsize, EBADF };
+    }
+    writedsize += task.Files()[fd]->Write(s, len);
+    iov++;
+  }
+  return { writedsize, 0 };
+
+}
+
 struct utsname {
   char sysname[65];    /* Operating system name (e.g., "Linux") */
   char nodename[65];   /* Name within "some implementation-defined
@@ -579,7 +613,7 @@ extern "C" std::array<SyscallFuncType*, numLinSyscall> syscall_table_lin{
   /* 0x011 */ syscall::dummy, // pread
   /* 0x012 */ syscall::dummy, // pwrite
   /* 0x013 */ syscall::dummy, // readv
-  /* 0x014 */ syscall::dummy, // writev
+  /* 0x014 */ syscall::writev,
   /* 0x015 */ syscall::dummy, // access
   /* 0x016 */ syscall::dummy, // pipe
   /* 0x017 */ syscall::dummy, // select
