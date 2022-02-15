@@ -484,13 +484,13 @@ struct utsname {
 SYSCALL(uname) {
   struct utsname *buf = reinterpret_cast<struct utsname*>(arg1);
 
-  strncpy(buf->sysname, sizeof(buf->sysname), "mikanOS");
-  strncpy(buf->nodename, sizeof(buf->nodename), "unknow");
-  strncpy(buf->release, sizeof(buf->release), "5.13.0");
-  strncpy(buf->version, sizeof(buf->version), "unknow");
-  strncpy(buf->machine, sizeof(buf->machine), "unknow");
+  strncpy(buf->sysname, "mikanOS",  sizeof(buf->sysname));
+  strncpy(buf->nodename, "unknow", sizeof(buf->nodename));
+  strncpy(buf->release, "5.13.0", sizeof(buf->release));
+  strncpy(buf->version, "unknow", sizeof(buf->version));
+  strncpy(buf->machine, "unknow", sizeof(buf->machine));
   #ifdef _GNU_SOURCE
-  strncpy(buf->domainname, sizeof(buf->domainname), "unknow");
+  strncpy(buf->domainname , "unknow", sizeof(buf->domainname));
   #endif
 
   return { 0, 0 };
