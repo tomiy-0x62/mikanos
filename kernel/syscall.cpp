@@ -527,7 +527,7 @@ SYSCALL(exit_group) {
 SYSCALL(dummy) {
   unsigned int syscallNum = getEAX();
   const char *msg1 = "Dummy Syscall called\n";
-  char msg2[100];
+  char msg2[200];
   char msg3[100];
   int length2 = std::sprintf(msg2, "arg1:0x%016lX arg2:0x%016lX\narg3:0x%016lX arg4:0x%016lX\narg5:0x%016lX arg6:0x%016lX\n", arg1, arg2, arg3, arg4, arg5, arg6);
   int length3 = std::sprintf(msg3, "System Call Number: 0x%08X is not implemented.\n", syscallNum);
