@@ -482,14 +482,16 @@ struct utsname {
 };
 
 SYSCALL(uname) {
-  // const size_t p_break = arg1;
   struct utsname *buf = reinterpret_cast<struct utsname*>(arg1);
 
-  strcpy(buf->sysname, "mikanOS");
-  strcpy(buf->nodename, "unknow");
-  strcpy(buf->release, "unknow");
-  strcpy(buf->version, "unknow");
-  strcpy(buf->machine, "unknow");
+  strncpy(buf->sysname, sizeof(buf->sysname), "mikanOS");
+  strncpy(buf->nodename, sizeof(buf->nodename), "unknow");
+  strncpy(buf->release, sizeof(buf->release), "5.13.0");
+  strncpy(buf->version, sizeof(buf->version), "unknow");
+  strncpy(buf->machine, sizeof(buf->machine), "unknow");
+  #ifdef _GNU_SOURCE
+  strncpy(buf->domainname, sizeof(buf->domainname), "unknow");
+  #endif
 
   return { 0, 0 };
 }
