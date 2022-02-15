@@ -521,16 +521,19 @@ SYSCALL(exit_group) {
   return { task.OSStackPointer(), static_cast<int>(arg1) };
 }
 
-/*uint64_t arg1, uint64_t arg2, uint64_t arg3, 
-      uint64_t arg4, uint64_t arg5, uint64_t arg6*/
-
 SYSCALL(dummy) {
   unsigned int syscallNum = getEAX();
   const char *msg1 = "Dummy Syscall called\n";
   char msg2[200];
   char msg3[100];
-  int length2 = std::sprintf(msg2, "arg1:0x%016lX arg2:0x%016lX\narg3:0x%016lX arg4:0x%016lX\narg5:0x%016lX arg6:0x%016lX\n", arg1, arg2, arg3, arg4, arg5, arg6);
-  int length3 = std::sprintf(msg3, "System Call Number: 0x%08X is not implemented.\n", syscallNum);
+  int length2 = std::snprintf(msg2, sizeof(msg2), "arg1:0x%016lX arg2:0x%016lX\narg3:0x%016lX arg4:0x%016lX\narg5:0x%016lX arg6:0x%016lX\n", arg1, arg2, arg3, arg4, arg5, arg6);
+  int length3 = std::snprintf(msg3, sizeof(msg3), "System Call Number: 0x%08X is not implemented.\n", syscallNum);
+  if (length2 > sizeof(msg2)) {
+    strcpy(msg2, "dummy syscall: message too long");
+  }
+  if (length3 > sizeof(msg3)) {
+    strcpy(msg3, "dummy syscall: message too long");
+  }
   syscall::PutString(1, (uint64_t)msg1, strlen(msg1), 1, 1, 1);
   syscall::PutString(1, (uint64_t)msg2, length2, 1, 1, 1);
   syscall::PutString(1, (uint64_t)msg3, length3, 1, 1, 1);
@@ -547,8 +550,11 @@ extern "C" syscall::Result invalid_Syscall_num(unsigned int syscallNum){
   char s[100]; // スタック上
   // 他の方法としてnew char[100], malloc(100) ヒープ領域に生成
   // 場所は違うけど、どちらも100byteの配列が作られる
-  int length = std::sprintf(s, "There is no Syscall Number: 0x%08X\n", syscallNum);
+  int length = std::snprintf(s, sizeof(s), "There is no Syscall Number: 0x%08X\n", syscallNum);
   // PUtString/Writeは書き込むべきbyte数 -> null文字は含まない
+  if (length > sizeof(s)) {
+    strcpy(s, "invalid_Syscall_num: message too long");
+  }
   syscall::PutString(1, (uint64_t)msg1, strlen(msg1), 1, 1, 1);
   syscall::PutString(1, (uint64_t)s, length, 1, 1, 1);
   return syscall::Exit(-1, 1, 1, 1, 1, 1);
@@ -559,7 +565,10 @@ extern "C" unsigned int LogSyscall() {
   unsigned int syscallNum = getEAX();
 
   char s[100];
-  int length = std::sprintf(s, "Called Syscall Number: 0x%08X\n", syscallNum);
+  int length = std::snprintf(s, sizeof(s), "Called Syscall Number: 0x%08X\n", syscallNum);
+  if (length > sizeof(s)) {
+    strcpy(s, "LogSyscall: message too long");
+  }
   if (length > 1024) {
     return syscallNum;
   }
