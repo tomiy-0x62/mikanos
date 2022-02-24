@@ -665,10 +665,13 @@ WithError<int> Terminal::ExecuteFile(fat::DirectoryEntry& file_entry,
 
   task.SetFileMapEnd(stack_frame_addr.value);
 
-  extern std::array<SegmentDescriptor, 8> gdt;                                                                                                                       
-  auto frame = memory_manager->Allocate(1);                                                                                                                          
-  uint32_t addr = reinterpret_cast<uint64_t>(frame.value.Frame());                                                                                                   
-  SetUserBitTrue(reinterpret_cast<PageMapEntry*>(GetCR3()), 4,                                                                                                       
+  extern std::array<SegmentDescriptor, 8> gdt;
+  auto frame = memory_manager->Allocate(1);
+  uint32_t addr = reinterpret_cast<uint64_t>(frame.value.Frame());
+  SetUserBitTrue(reinterpret_cast<PageMapEntry*>(GetCR3()), 4,
+                        LinearAddress4Level{0x0});
+  // Linuxアプリが0x0にアクセスすることがあるからそこでPFが起きないように0x0をユーザー空間からアクセス可能に設定
+  SetUserBitTrue(reinterpret_cast<PageMapEntry*>(GetCR3()), 4,
                         LinearAddress4Level{addr});
   SetupFS(addr);
 
