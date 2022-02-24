@@ -686,6 +686,8 @@ WithError<int> Terminal::ExecuteFile(fat::DirectoryEntry& file_entry,
   task.Files().clear();
   task.FileMaps().clear();
 
+  memory_manager->Free(FrameID{addr / kBytesPerFrame}, 1);
+
   if (isLinux){
     if (auto err = CleanPageMaps(LinearAddress4Level{0x0000'0000'0800'0000})) {
       return { ret, err };
