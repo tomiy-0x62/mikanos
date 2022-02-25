@@ -417,6 +417,10 @@ SYSCALL(write) {
   return { task.Files()[fd]->Write(s, len), 0 };
 }
 
+SYSCALL(fstat) {
+  return { 0, 0 };
+}
+
 SYSCALL(brk) {
   const size_t p_break = arg1;
   // const int flags = arg2;
@@ -620,7 +624,7 @@ extern "C" std::array<SyscallFuncType*, numLinSyscall> syscall_table_lin{
   /* 0x002 */ syscall::dummy, // open
   /* 0x003 */ syscall::dummy, // close
   /* 0x004 */ syscall::dummy, // stat
-  /* 0x005 */ syscall::dummy, // fstat
+  /* 0x005 */ syscall::fstat,
   /* 0x006 */ syscall::dummy, // lstat
   /* 0x007 */ syscall::dummy, // poll
   /* 0x008 */ syscall::dummy, // lseek
