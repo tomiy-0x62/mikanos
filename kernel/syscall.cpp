@@ -496,6 +496,18 @@ SYSCALL(uname) {
   return { 0, 0 };
 }
 
+SYSCALL(readlink) {
+  // ssize_t readlink(const char *pathname, char *buf, size_t bufsiz);
+
+  // char *pathname = reinterpret_cast<char *>(arg1);
+  char *buf = reinterpret_cast<char *>(arg2); 
+  // int bufsiz = arg3;
+  
+  strcpy(buf, "/");
+  
+  return { 1, EACCES};
+}
+
 SYSCALL(getuid) {
   return { 0, 0 };
 }
@@ -692,7 +704,7 @@ extern "C" std::array<SyscallFuncType*, numLinSyscall> syscall_table_lin{
   /* 0x056 */ syscall::dummy, // link
   /* 0x057 */ syscall::dummy, // unlink
   /* 0x058 */ syscall::dummy, // symlink
-  /* 0x059 */ syscall::dummy, // readlink
+  /* 0x059 */ syscall::readlink,
   /* 0x05a */ syscall::dummy, // chmod
   /* 0x05b */ syscall::dummy, // fchmod
   /* 0x05c */ syscall::dummy, // chown
