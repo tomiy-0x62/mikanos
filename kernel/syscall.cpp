@@ -310,6 +310,17 @@ namespace {
     return num_files;
   }
 
+  size_t AllocateFDGE(Task& task, int min) {
+    const size_t num_files = task.Files().size();
+    for (size_t i = 0; i < num_files; ++i) {
+      if (!task.Files()[i] && i >= min) {
+        return i;
+      }
+    }
+    task.Files().emplace_back();
+    return num_files;
+  }
+
   std::pair<fat::DirectoryEntry*, int> CreateFile(const char* path) {
     auto [ file, err ] = fat::CreateFile(path);
     switch (err.Cause()) {
@@ -500,6 +511,30 @@ SYSCALL(uname) {
   return { 0, 0 };
 }
 
+SYSCALL(fcntl) {
+  const auto fd = arg1;
+  const auto cmd = arg2;
+  
+  __asm__("cli");
+  auto& task = task_manager->CurrentTask();
+  __asm__("sti");
+
+  if (cmd == F_DUPFD) {
+    size_t fd = AllocateFDGE(task, arg3);
+    // task.Files()[fd] = std::make_unique<fat::FileDescriptor>(*file); // わからん
+    return { fd, 0 };
+  } else if (cmd == F_GETFD) {
+    // TODO
+  } else if (cmd == F_SETFD) {
+    // TODO
+  } else if (cmd == F_GETFL) {
+    return { O_RDWR, 0};
+  } else if (cmd == F_SETFL) {
+    // TODO
+  }
+  return { 0, 0 };
+}
+
 SYSCALL(readlink) {
   // ssize_t readlink(const char *pathname, char *buf, size_t bufsiz);
 
@@ -537,6 +572,36 @@ SYSCALL(exit_group) {
   auto& task = task_manager->CurrentTask();
   __asm__("sti");
   return { task.OSStackPointer(), static_cast<int>(arg1) };
+}
+
+SYSCALL(openat) {
+    const char* path = reinterpret_cast<const char*>(arg1);
+  const int flags = arg2;
+  __asm__("cli");
+  auto& task = task_manager->CurrentTask();
+  __asm__("sti");
+
+  if (strcmp(path, "@stdin") == 0) {
+    return { 0, 0 };
+  }
+
+  auto [ file, post_slash ] = fat::FindFile(path);
+  if (file == nullptr) {
+    if ((flags & O_CREAT) == 0) {
+      return { 0, ENOENT };
+    }
+    auto [ new_file, err ] = CreateFile(path);
+    if (err) {
+      return { 0, err };
+    }
+    file = new_file;
+  } else if (file->attr != fat::Attribute::kDirectory && post_slash) {
+    return { 0, ENOENT };
+  }
+
+  size_t fd = AllocateFD(task);
+  task.Files()[fd] = std::make_unique<fat::FileDescriptor>(*file);
+  return { fd, 0 };
 }
 
 SYSCALL(dummy) {
@@ -691,7 +756,7 @@ extern "C" std::array<SyscallFuncType*, numLinSyscall> syscall_table_lin{
   /* 0x045 */ syscall::dummy, // msgsnd
   /* 0x046 */ syscall::dummy, // msgrcv
   /* 0x047 */ syscall::dummy, // msgctl
-  /* 0x048 */ syscall::dummy, // fcntl
+  /* 0x048 */ syscall::fcntl,
   /* 0x049 */ syscall::dummy, // flock
   /* 0x04a */ syscall::dummy, // fsync
   /* 0x04b */ syscall::dummy, // fdatasync
@@ -876,7 +941,7 @@ extern "C" std::array<SyscallFuncType*, numLinSyscall> syscall_table_lin{
   /* 0x0fe */ syscall::dummy, // inotify_add_watch,
   /* 0x0ff */ syscall::dummy, // inotify_rm_watch,
   /* 0x100 */ syscall::dummy, // migrate_pages,
-  /* 0x101 */ syscall::dummy, // openat,
+  /* 0x101 */ syscall::openat,
   /* 0x102 */ syscall::dummy, // mkdirat,
   /* 0x103 */ syscall::dummy, // mknodat,
   /* 0x104 */ syscall::dummy, // fchownat,
