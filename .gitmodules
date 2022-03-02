@@ -1,0 +1,3 @@
+[submodule "apps/ed"]
+	path = apps/ed
+	url = git@github.com:tomiy-tomiylab/ed.git
