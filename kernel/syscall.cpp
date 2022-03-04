@@ -450,6 +450,16 @@ SYSCALL(brk) {
   return { dp_end, 0 };
 }
 
+SYSCALL(rt_sigaction) {
+
+  return { 0, 0 };
+}
+
+SYSCALL(ioctl) {
+
+  return { 0, 0 };
+}
+
 struct iovec {
   void  *iov_base;    /* Starting address */
   size_t iov_len;     /* Number of bytes to transfer */
@@ -697,10 +707,10 @@ extern "C" std::array<SyscallFuncType*, numLinSyscall> syscall_table_lin{
   /* 0x00a */ syscall::dummy, // mprotect
   /* 0x00b */ syscall::dummy, // munmap
   /* 0x00c */ syscall::brk,
-  /* 0x00d */ syscall::dummy, // rt_sigaction
+  /* 0x00d */ syscall::rt_sigaction,
   /* 0x00e */ syscall::dummy, // rt_sigprocmask
   /* 0x00f */ syscall::dummy, // rt_sigreturn
-  /* 0x010 */ syscall::dummy, // ioctl
+  /* 0x010 */ syscall::ioctl,
   /* 0x011 */ syscall::dummy, // pread
   /* 0x012 */ syscall::dummy, // pwrite
   /* 0x013 */ syscall::dummy, // readv
