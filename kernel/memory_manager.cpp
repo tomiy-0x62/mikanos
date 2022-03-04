@@ -124,6 +124,10 @@ void InitializeMemoryManager(const MemoryMap& memory_map) {
     }
   }
 
+  memory_manager->MarkAllocated(
+          FrameID{0x8000000 / kBytesPerFrame},
+          26112);
+
   memory_manager->SetMemoryRange(FrameID{1}, FrameID{available_end / kBytesPerFrame});
 
   if (auto err = InitializeHeap(*memory_manager)) {
