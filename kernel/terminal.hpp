@@ -82,6 +82,7 @@ class TerminalFileDescriptor : public FileDescriptor {
   size_t Read(void* buf, size_t len) override;
   size_t Write(const void* buf, size_t len) override;
   size_t Size() const override { return 0; }
+  bool IsSeekable() override { return false; }
   size_t Load(void* buf, size_t len, size_t offset) override;
 
  private:
@@ -94,6 +95,7 @@ class PipeDescriptor : public FileDescriptor {
   size_t Read(void* buf, size_t len) override;
   size_t Write(const void* buf, size_t len) override;
   size_t Size() const override { return 0; }
+  bool IsSeekable() override { return false; }
   size_t Load(void* buf, size_t len, size_t offset) override { return 0; }
 
   void FinishWrite();

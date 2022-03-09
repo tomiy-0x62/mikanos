@@ -410,6 +410,20 @@ SYSCALL(MapFile) {
 
 // Linux System call
 
+SYSCALL(read) {
+  const int fd = arg1;
+  void* buf = reinterpret_cast<void*>(arg2);
+  size_t count = arg3;
+  __asm__("cli");
+  auto& task = task_manager->CurrentTask();
+  __asm__("sti");
+
+  if (fd < 0 || task.Files().size() <= fd || !task.Files()[fd]) {
+    return { 0, EBADF };
+  }
+  return { task.Files()[fd]->Read(buf, count), 0 };
+}
+
 SYSCALL(write) {
   const auto fd = arg1;
   const char* s = reinterpret_cast<const char*>(arg2);
@@ -426,6 +440,39 @@ SYSCALL(write) {
     return { 0, EBADF };
   }
   return { task.Files()[fd]->Write(s, len), 0 };
+}
+
+SYSCALL(lseek) {
+  // off_t lseek(int fd, off_t offset, int whence);
+  const auto fd = arg1;
+  off_t offset = arg2;
+  int whence = arg3;
+
+  __asm__("cli");
+  auto& task = task_manager->CurrentTask();
+  __asm__("sti");
+
+  if (fd < 0 || task.Files().size() <= fd || !task.Files()[fd]) {
+    return { 0, EBADF };
+  }
+
+  
+  if (task.Files()[fd]->IsSeekable()) {
+    return { 0, ESPIPE };
+  } 
+  
+  size_t size = task.Files()[fd]->Size();
+  switch(whence) {
+    case SEEK_SET:
+      return { static_cast<uint64_t>(task.Files()[fd]->offset = offset), 0 };
+    case SEEK_CUR:
+      return { static_cast<uint64_t>(task.Files()[fd]->offset += offset), 0 };
+    case SEEK_END:
+      return { static_cast<uint64_t>(task.Files()[fd]->offset = size + offset), 0 };
+    default:
+      return { 0, EINVAL };
+  }
+
 }
 
 SYSCALL(fstat) {
@@ -694,7 +741,7 @@ extern "C" std::array<SyscallFuncType*, numSyscall> syscall_table{
 
 extern "C" constexpr unsigned int numLinSyscall = 0x14f;
 extern "C" std::array<SyscallFuncType*, numLinSyscall> syscall_table_lin{
-  /* 0x000 */ syscall::dummy, // read
+  /* 0x000 */ syscall::read,
   /* 0x001 */ syscall::write,
   /* 0x002 */ syscall::dummy, // open
   /* 0x003 */ syscall::dummy, // close
@@ -702,7 +749,7 @@ extern "C" std::array<SyscallFuncType*, numLinSyscall> syscall_table_lin{
   /* 0x005 */ syscall::fstat,
   /* 0x006 */ syscall::dummy, // lstat
   /* 0x007 */ syscall::dummy, // poll
-  /* 0x008 */ syscall::dummy, // lseek
+  /* 0x008 */ syscall::lseek,
   /* 0x009 */ syscall::dummy, // mmap
   /* 0x00a */ syscall::dummy, // mprotect
   /* 0x00b */ syscall::dummy, // munmap
