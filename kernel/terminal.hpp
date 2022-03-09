@@ -87,6 +87,7 @@ class TerminalFileDescriptor : public FileDescriptor {
 
  private:
   Terminal& term_;
+  char termbuf[1024] = {0};
 };
 
 class PipeDescriptor : public FileDescriptor {

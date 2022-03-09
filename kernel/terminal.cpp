@@ -717,6 +717,14 @@ void Terminal::Print(char32_t c) {
 
   if (c == U'\n') {
     newline();
+  } else if (c == U'\b') {
+    if (cursor_.x > 0) {
+      --cursor_.x;
+      FillRectangle(*window_->Writer(), CalcCursorPos(), {8, 16}, {0, 0, 0});
+      if (linebuf_index_ > 0) {
+        --linebuf_index_;
+      }
+    }
   } else if (IsHankaku(c)) {
     if (cursor_.x == kColumns) {
       newline();
@@ -890,8 +898,21 @@ TerminalFileDescriptor::TerminalFileDescriptor(Terminal& term)
     : term_{term} {
 }
 
+void shift_buf(char buf[]) {
+  int len = strlen(buf);
+  for (int i = 0; i < len; i++) {
+    buf[i] = buf[i+1];
+  }
+}
+
 size_t TerminalFileDescriptor::Read(void* buf, size_t len) {
   char* bufc = reinterpret_cast<char*>(buf);
+
+  if (strlen(termbuf) != 0) {
+    bufc[0] = termbuf[0];
+    shift_buf(termbuf);
+    return 1;
+  }
 
   while (true) {
     __asm__("cli");
@@ -914,11 +935,21 @@ size_t TerminalFileDescriptor::Read(void* buf, size_t len) {
       }
       continue;
     }
-
-    bufc[0] = msg->arg.keyboard.ascii;
-    term_.Print(bufc, 1);
+    char input = msg->arg.keyboard.ascii;
+    term_.Print(&input, 1);
     term_.Redraw();
-    return 1;
+
+    if (input == '\b' && strlen(termbuf) != 0) {
+      termbuf[strlen(termbuf)-1] = '\0';
+    } else if (input == '\n') {
+      termbuf[strlen(termbuf)] = input;
+      bufc[0] = termbuf[0];
+      shift_buf(termbuf);
+      return 1;
+    } else {
+      termbuf[strlen(termbuf)] = input;
+    }
+
   }
 }
 
