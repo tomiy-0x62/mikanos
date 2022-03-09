@@ -24,8 +24,18 @@ namespace syscall {
     int error;
   };
 
+  struct ResultLin {
+    int64_t value;
+    int error;
+  };
+
 #define SYSCALL(name) \
   Result name( \
+      uint64_t arg1, uint64_t arg2, uint64_t arg3, \
+      uint64_t arg4, uint64_t arg5, uint64_t arg6)
+
+#define SYSCALL_LIN(name) \
+  ResultLin name( \
       uint64_t arg1, uint64_t arg2, uint64_t arg3, \
       uint64_t arg4, uint64_t arg5, uint64_t arg6)
 
@@ -410,7 +420,7 @@ SYSCALL(MapFile) {
 
 // Linux System call
 
-SYSCALL(read) {
+SYSCALL_LIN(read) {
   const int fd = arg1;
   void* buf = reinterpret_cast<void*>(arg2);
   size_t count = arg3;
@@ -419,17 +429,17 @@ SYSCALL(read) {
   __asm__("sti");
 
   if (fd < 0 || task.Files().size() <= fd || !task.Files()[fd]) {
-    return { 0, EBADF };
+    return { -1, EBADF };
   }
-  return { task.Files()[fd]->Read(buf, count), 0 };
+  return { static_cast<int64_t>(task.Files()[fd]->Read(buf, count)), 0 };
 }
 
-SYSCALL(write) {
+SYSCALL_LIN(write) {
   const auto fd = arg1;
   const char* s = reinterpret_cast<const char*>(arg2);
   const auto len = arg3;
   if (len > 1024) {
-    return { 0, E2BIG };
+    return { -1, E2BIG };
   }
 
   __asm__("cli");
@@ -437,12 +447,12 @@ SYSCALL(write) {
   __asm__("sti");
 
   if (fd < 0 || task.Files().size() <= fd || !task.Files()[fd]) {
-    return { 0, EBADF };
+    return { -1, EBADF };
   }
-  return { task.Files()[fd]->Write(s, len), 0 };
+  return { static_cast<int64_t>(task.Files()[fd]->Write(s, len)), 0 };
 }
 
-SYSCALL(lseek) {
+SYSCALL_LIN(lseek) {
   // off_t lseek(int fd, off_t offset, int whence);
   const auto fd = arg1;
   off_t offset = arg2;
@@ -453,33 +463,33 @@ SYSCALL(lseek) {
   __asm__("sti");
 
   if (fd < 0 || task.Files().size() <= fd || !task.Files()[fd]) {
-    return { 0, EBADF };
+    return { -1, EBADF };
   }
 
   
   if (task.Files()[fd]->IsSeekable()) {
-    return { 0, ESPIPE };
+    return { -1, ESPIPE };
   } 
   
   size_t size = task.Files()[fd]->Size();
   switch(whence) {
     case SEEK_SET:
-      return { static_cast<uint64_t>(task.Files()[fd]->offset = offset), 0 };
+      return { static_cast<int64_t>(task.Files()[fd]->offset = offset), 0 };
     case SEEK_CUR:
-      return { static_cast<uint64_t>(task.Files()[fd]->offset += offset), 0 };
+      return { static_cast<int64_t>(task.Files()[fd]->offset += offset), 0 };
     case SEEK_END:
-      return { static_cast<uint64_t>(task.Files()[fd]->offset = size + offset), 0 };
+      return { static_cast<int64_t>(task.Files()[fd]->offset = size + offset), 0 };
     default:
-      return { 0, EINVAL };
+      return { -1, EINVAL };
   }
 
 }
 
-SYSCALL(fstat) {
+SYSCALL_LIN(fstat) {
   return { 0, 0 };
 }
 
-SYSCALL(brk) {
+SYSCALL_LIN(brk) {
   const size_t p_break = arg1;
   // const int flags = arg2;
   __asm__("cli");
@@ -494,15 +504,15 @@ SYSCALL(brk) {
     dp_end = p_break;
   }
   task.SetDPagingEnd(dp_end);
-  return { dp_end, 0 };
+  return { static_cast<int64_t>(dp_end), 0 };
 }
 
-SYSCALL(rt_sigaction) {
+SYSCALL_LIN(rt_sigaction) {
 
   return { 0, 0 };
 }
 
-SYSCALL(ioctl) {
+SYSCALL_LIN(ioctl) {
 
   return { 0, 0 };
 }
@@ -512,7 +522,7 @@ struct iovec {
   size_t iov_len;     /* Number of bytes to transfer */
 };
 
-SYSCALL(writev) {
+SYSCALL_LIN(writev) {
   // ssize_t writev(int fd, const struct iovec *iov, int iovcnt);
 
   const auto fd = arg1;
@@ -524,7 +534,7 @@ SYSCALL(writev) {
     const auto len = iov->iov_len;
     const char* s = reinterpret_cast<const char *>(iov->iov_base);
     if (len > 1024) {
-      return { 0, E2BIG };
+      return { -1, E2BIG };
     }
 
     __asm__("cli");
@@ -532,12 +542,12 @@ SYSCALL(writev) {
     __asm__("sti");
 
     if (fd < 0 || task.Files().size() <= fd || !task.Files()[fd]) {
-      return { writedsize, EBADF };
+      return { static_cast<int64_t>(writedsize), EBADF };
     }
     writedsize += task.Files()[fd]->Write(s, len);
     iov++;
   }
-  return { writedsize, 0 };
+  return { static_cast<int64_t>(writedsize), 0 };
 
 }
 
@@ -553,7 +563,7 @@ struct utsname {
   #endif
 };
 
-SYSCALL(uname) {
+SYSCALL_LIN(uname) {
   struct utsname *buf = reinterpret_cast<struct utsname*>(arg1);
 
   strncpy(buf->sysname, "mikanOS",  sizeof(buf->sysname));
@@ -568,7 +578,7 @@ SYSCALL(uname) {
   return { 0, 0 };
 }
 
-SYSCALL(fcntl) {
+SYSCALL_LIN(fcntl) {
   const auto fd = arg1;
   const auto cmd = arg2;
   
@@ -579,7 +589,7 @@ SYSCALL(fcntl) {
   if (cmd == F_DUPFD) {
     size_t fd = AllocateFDGE(task, arg3);
     // task.Files()[fd] = std::make_unique<fat::FileDescriptor>(*file); // わからん
-    return { fd, 0 };
+    return { static_cast<int64_t>(fd), 0 };
   } else if (cmd == F_GETFD) {
     // TODO
   } else if (cmd == F_SETFD) {
@@ -592,7 +602,7 @@ SYSCALL(fcntl) {
   return { 0, 0 };
 }
 
-SYSCALL(readlink) {
+SYSCALL_LIN(readlink) {
   // ssize_t readlink(const char *pathname, char *buf, size_t bufsiz);
 
   // char *pathname = reinterpret_cast<char *>(arg1);
@@ -604,41 +614,41 @@ SYSCALL(readlink) {
   return { 1, EACCES};
 }
 
-SYSCALL(getuid) {
+SYSCALL_LIN(getuid) {
   return { 0, 0 };
 }
 
-SYSCALL(geteuid) {
+SYSCALL_LIN(geteuid) {
   return { 0, 0 };
 }
 
-SYSCALL(getegid) {
+SYSCALL_LIN(getegid) {
   return { 0, 0 };
 }
 
-SYSCALL(getgid) {
+SYSCALL_LIN(getgid) {
   return { 0, 0 };
 }
 
-SYSCALL(arch_prctl) {
+SYSCALL_LIN(arch_prctl) {
   return { 0, 0 };
 }
 
-SYSCALL(exit_group) {
+SYSCALL_LIN(exit_group) {
   __asm__("cli");
   auto& task = task_manager->CurrentTask();
   __asm__("sti");
-  return { task.OSStackPointer(), static_cast<int>(arg1) };
+  return { static_cast<int64_t>(task.OSStackPointer()), static_cast<int>(arg1) };
 }
 
-SYSCALL(openat) {
+SYSCALL_LIN(openat) {
     const char* path = reinterpret_cast<const char*>(arg1);
   const int flags = arg2;
   __asm__("cli");
   auto& task = task_manager->CurrentTask();
   __asm__("sti");
 
-  if (strcmp(path, "@stdin") == 0) {
+  if (strcmp(path, "stdin") == 0) {
     return { 0, 0 };
   }
 
@@ -649,19 +659,19 @@ SYSCALL(openat) {
     }
     auto [ new_file, err ] = CreateFile(path);
     if (err) {
-      return { 0, err };
+      return { -1, err };
     }
     file = new_file;
   } else if (file->attr != fat::Attribute::kDirectory && post_slash) {
-    return { 0, ENOENT };
+    return { -1, ENOENT };
   }
 
   size_t fd = AllocateFD(task);
   task.Files()[fd] = std::make_unique<fat::FileDescriptor>(*file);
-  return { fd, 0 };
+  return { static_cast<int64_t>(fd), 0 };
 }
 
-SYSCALL(dummy) {
+SYSCALL_LIN(dummy) {
   unsigned int syscallNum = getEAX();
   const char *msg1 = "Dummy Syscall called\n";
   char msg2[200];
@@ -719,6 +729,9 @@ extern "C" unsigned int LogSyscall() {
 using SyscallFuncType = syscall::Result (uint64_t, uint64_t, uint64_t,
                                          uint64_t, uint64_t, uint64_t);
 
+using SyscallLinFuncType = syscall::ResultLin (uint64_t, uint64_t, uint64_t,
+                                         uint64_t, uint64_t, uint64_t);
+
 extern "C" constexpr unsigned int numSyscall = 0x10;
 extern "C" std::array<SyscallFuncType*, numSyscall> syscall_table{
   /* 0x00 */ syscall::LogString,
@@ -740,7 +753,7 @@ extern "C" std::array<SyscallFuncType*, numSyscall> syscall_table{
 };
 
 extern "C" constexpr unsigned int numLinSyscall = 0x14f;
-extern "C" std::array<SyscallFuncType*, numLinSyscall> syscall_table_lin{
+extern "C" std::array<SyscallLinFuncType*, numLinSyscall> syscall_table_lin{
   /* 0x000 */ syscall::read,
   /* 0x001 */ syscall::write,
   /* 0x002 */ syscall::dummy, // open
