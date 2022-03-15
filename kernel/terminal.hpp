@@ -11,6 +11,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <cerrno>
 #include "window.hpp"
 #include "task.hpp"
 #include "layer.hpp"
@@ -82,7 +83,7 @@ class TerminalFileDescriptor : public FileDescriptor {
   size_t Read(void* buf, size_t len) override;
   size_t Write(const void* buf, size_t len) override;
   size_t Size() const override { return 0; }
-  bool IsSeekable() override { return false; }
+  off_t SetOffset(off_t offset, int whence) override { return -1; }
   size_t Load(void* buf, size_t len, size_t offset) override;
 
  private:
@@ -96,7 +97,7 @@ class PipeDescriptor : public FileDescriptor {
   size_t Read(void* buf, size_t len) override;
   size_t Write(const void* buf, size_t len) override;
   size_t Size() const override { return 0; }
-  bool IsSeekable() override { return false; }
+  off_t SetOffset(off_t offset, int whence) override { return -1; }
   size_t Load(void* buf, size_t len, size_t offset) override { return 0; }
 
   void FinishWrite();

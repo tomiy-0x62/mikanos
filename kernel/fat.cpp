@@ -256,27 +256,27 @@ FileDescriptor::FileDescriptor(DirectoryEntry& fat_entry)
 }
 
 size_t FileDescriptor::Read(void* buf, size_t len) {
-  if (rd_cluster_ == 0) {
-    rd_cluster_ = fat_entry_.FirstCluster();
+  if (cluster_ == 0) {
+    cluster_ = fat_entry_.FirstCluster();
   }
   uint8_t* buf8 = reinterpret_cast<uint8_t*>(buf);
-  len = std::min(len, fat_entry_.file_size - rd_off_);
+  len = std::min(len, fat_entry_.file_size - off_);
 
   size_t total = 0;
   while (total < len) {
-    uint8_t* sec = GetSectorByCluster<uint8_t>(rd_cluster_);
-    size_t n = std::min(len - total, bytes_per_cluster - rd_cluster_off_);
-    memcpy(&buf8[total], &sec[rd_cluster_off_], n);
+    uint8_t* sec = GetSectorByCluster<uint8_t>(cluster_);
+    size_t n = std::min(len - total, bytes_per_cluster - cluster_off_);
+    memcpy(&buf8[total], &sec[cluster_off_], n);
     total += n;
 
-    rd_cluster_off_ += n;
-    if (rd_cluster_off_ == bytes_per_cluster) {
-      rd_cluster_ = NextCluster(rd_cluster_);
-      rd_cluster_off_ = 0;
+    cluster_off_ += n;
+    if (cluster_off_ == bytes_per_cluster) {
+      cluster_ = NextCluster(cluster_);
+      cluster_off_ = 0;
     }
   }
 
-  rd_off_ += total;
+  off_ += total;
   return total;
 }
 
@@ -285,13 +285,13 @@ size_t FileDescriptor::Write(const void* buf, size_t len) {
     return (bytes + bytes_per_cluster - 1) / bytes_per_cluster;
   };
 
-  if (wr_cluster_ == 0) {
+  if (cluster_ == 0) {
     if (fat_entry_.FirstCluster() != 0) {
-      wr_cluster_ = fat_entry_.FirstCluster();
+      cluster_ = fat_entry_.FirstCluster();
     } else {
-      wr_cluster_ = AllocateClusterChain(num_cluster(len));
-      fat_entry_.first_cluster_low = wr_cluster_ & 0xffff;
-      fat_entry_.first_cluster_high = (wr_cluster_ >> 16) & 0xffff;
+      cluster_ = AllocateClusterChain(num_cluster(len));
+      fat_entry_.first_cluster_low = cluster_ & 0xffff;
+      fat_entry_.first_cluster_high = (cluster_ >> 16) & 0xffff;
     }
   }
 
@@ -299,32 +299,61 @@ size_t FileDescriptor::Write(const void* buf, size_t len) {
 
   size_t total = 0;
   while (total < len) {
-    if (wr_cluster_off_ == bytes_per_cluster) {
-      const auto next_cluster = NextCluster(wr_cluster_);
+    if (cluster_off_ == bytes_per_cluster) {
+      const auto next_cluster = NextCluster(cluster_);
       if (next_cluster == kEndOfClusterchain) {
-        wr_cluster_ = ExtendCluster(wr_cluster_, num_cluster(len - total));
+        cluster_ = ExtendCluster(cluster_, num_cluster(len - total));
       } else {
-        wr_cluster_ = next_cluster;
+        cluster_ = next_cluster;
       }
-      wr_cluster_off_ = 0;
+      cluster_off_ = 0;
     }
 
-    uint8_t* sec = GetSectorByCluster<uint8_t>(wr_cluster_);
-    size_t n = std::min(len, bytes_per_cluster - wr_cluster_off_);
-    memcpy(&sec[wr_cluster_off_], &buf8[total], n);
+    uint8_t* sec = GetSectorByCluster<uint8_t>(cluster_);
+    size_t n = std::min(len, bytes_per_cluster - cluster_off_);
+    memcpy(&sec[cluster_off_], &buf8[total], n);
     total += n;
 
-    wr_cluster_off_ += n;
+    cluster_off_ += n;
   }
 
-  wr_off_ += total;
-  fat_entry_.file_size = wr_off_;
+  off_ += total;
+  fat_entry_.file_size = off_;
   return total;
+}
+
+off_t FileDescriptor::SetOffset(off_t offset, int whence) {
+  auto num_cluster = [](size_t bytes) {
+    return (bytes + bytes_per_cluster - 1) / bytes_per_cluster;
+  };
+  size_t size = this->Size();
+  switch(whence) {
+    case SEEK_SET: // The file offset is set to offset bytes.
+      off_ = offset;
+      break;
+    case SEEK_CUR: // The file offset is set to its current location plus offset bytes.
+      off_ += offset;
+      break;
+    case SEEK_END: // The file offset is set to the size of the file plus offset bytes. 
+      off_ = size + offset;
+      break;
+  }
+  cluster_ = fat_entry_.FirstCluster();
+  for (int i = 0; i < num_cluster(off_); i++) {
+    const auto next_cluster = NextCluster(cluster_);
+    if (next_cluster == kEndOfClusterchain) {
+      cluster_ = ExtendCluster(cluster_, num_cluster(off_ - size));
+    } else {
+      cluster_ = next_cluster;
+    }
+  }
+  cluster_off_ = off_ % bytes_per_cluster;
+  return off_;
 }
 
 size_t FileDescriptor::Load(void* buf, size_t len, size_t offset) {
   FileDescriptor fd{fat_entry_};
-  fd.rd_off_ = offset;
+  fd.off_ = offset;
 
   unsigned long cluster = fat_entry_.FirstCluster();
   while (offset >= bytes_per_cluster) {
@@ -332,8 +361,8 @@ size_t FileDescriptor::Load(void* buf, size_t len, size_t offset) {
     cluster = NextCluster(cluster);
   }
 
-  fd.rd_cluster_ = cluster;
-  fd.rd_cluster_off_ = offset;
+  fd.cluster_ = cluster;
+  fd.cluster_off_ = offset;
   return fd.Read(buf, len);
 }
 

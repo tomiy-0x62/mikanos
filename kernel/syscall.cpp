@@ -466,23 +466,17 @@ SYSCALL_LIN(lseek) {
     return { -1, EBADF };
   }
 
-  
-  if (task.Files()[fd]->IsSeekable()) {
-    return { -1, ESPIPE };
-  } 
-  
-  size_t size = task.Files()[fd]->Size();
-  switch(whence) {
-    case SEEK_SET:
-      return { static_cast<int64_t>(task.Files()[fd]->offset = offset), 0 };
-    case SEEK_CUR:
-      return { static_cast<int64_t>(task.Files()[fd]->offset += offset), 0 };
-    case SEEK_END:
-      return { static_cast<int64_t>(task.Files()[fd]->offset = size + offset), 0 };
-    default:
-      return { -1, EINVAL };
+  if (whence != SEEK_SET || whence != SEEK_CUR || whence != SEEK_END) {
+    return { -1, EINVAL };
   }
 
+  off_t off = task.Files()[fd]->SetOffset(offset, whence);
+
+  if (off < 0) {
+    return { -1, ESPIPE };
+  } else {
+    return { off, 0 };
+  }
 }
 
 SYSCALL_LIN(fstat) {

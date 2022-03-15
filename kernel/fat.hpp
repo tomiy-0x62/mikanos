@@ -191,17 +191,14 @@ class FileDescriptor : public ::FileDescriptor {
   size_t Read(void* buf, size_t len) override;
   size_t Write(const void* buf, size_t len) override;
   size_t Size() const override { return fat_entry_.file_size; }
-  bool IsSeekable() override { return true; }
+  off_t SetOffset(off_t offset, int whence) override;
   size_t Load(void* buf, size_t len, size_t offset) override;
 
  private:
   DirectoryEntry& fat_entry_;
-  size_t rd_off_ = 0;
-  unsigned long rd_cluster_ = 0;
-  size_t rd_cluster_off_ = 0;
-  size_t wr_off_ = 0;
-  unsigned long wr_cluster_ = 0;
-  size_t wr_cluster_off_ = 0;
+  size_t off_ = 0;
+  unsigned long cluster_ = 0;
+  size_t cluster_off_ = 0;
 };
 
 } // namespace fat
