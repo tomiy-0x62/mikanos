@@ -211,8 +211,8 @@ CallApp:  ; int CallApp({int argc, char** argv, char** auxvec, uint16_t ss,
     add rdx, 8
     push rdx  ; CS
     push rcx  ; RIP
-    mov rcx, qword [rdi+24] ; アプリの第三引数 auxvec
-    mov rdx, qword [rdi+16]  ; アプリの第二引数 argv
+    mov rdx, qword [rdi+16] ; アプリの第三引数 auxvec
+    mov rsi, qword [rdi+8]  ; アプリの第二引数 argv
     mov edi, dword [rdi]  ; アプリの第一引数 argc
     o64 retf
     ; アプリケーションが終了してもここには来ない
