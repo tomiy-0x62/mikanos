@@ -308,7 +308,8 @@ extern syscall_table_lin
 extern numSyscall
 extern numLinSyscall
 extern invalid_Syscall_num
-extern LogSyscall
+extern LogSyscallNum
+extern LogSyscallRet
 global SyscallEntry
 SyscallEntry:  ; void SyscallEntry(void);
     push rbp
@@ -345,7 +346,7 @@ SyscallEntry:  ; void SyscallEntry(void);
     push r8
     push r9
 
-    call LogSyscall
+    call LogSyscallNum
 
     pop r9
     pop r8
@@ -362,12 +363,14 @@ SyscallEntry:  ; void SyscallEntry(void);
         cmp eax, [numSyscall] ; if(eax >= numSyscall)
         jae .InvalidSyscallNum
         call [syscall_table + 8 * eax]
+        call LogSyscallRet
         jmp .SyscallEnd
 
     .LinSyscall: 
         cmp eax, [numLinSyscall] ; if(eax >= numLinSyscall)
         jae .InvalidLinSyscallNum
         call [syscall_table_lin + 8 * eax]
+        call LogSyscallRet
         jmp .SyscallEnd
 
     .InvalidSyscallNum:
