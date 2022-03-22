@@ -452,6 +452,49 @@ SYSCALL_LIN(write) {
   return { static_cast<int64_t>(task.Files()[fd]->Write(s, len)), 0 };
 }
 
+SYSCALL_LIN(open) {
+    const char* path = reinterpret_cast<const char*>(arg1);
+  const int flags = arg2;
+  __asm__("cli");
+  auto& task = task_manager->CurrentTask();
+  __asm__("sti");
+
+  if (strcmp(path, "stdin") == 0) {
+    return { 0, 0 };
+  }
+
+  auto [ file, post_slash ] = fat::FindFile(path);
+  if (file == nullptr) {
+    if ((flags & O_CREAT) == 0) {
+      return { 0, ENOENT };
+    }
+    auto [ new_file, err ] = CreateFile(path);
+    if (err) {
+      return { -1, err };
+    }
+    file = new_file;
+  } else if (file->attr != fat::Attribute::kDirectory && post_slash) {
+    return { -1, ENOENT };
+  }
+
+  size_t fd = AllocateFD(task);
+  task.Files()[fd] = std::make_unique<fat::FileDescriptor>(*file);
+  return { static_cast<int64_t>(fd), 0 };
+}
+
+SYSCALL_LIN(close) {
+  const int fd = arg1;
+  __asm__("cli");
+  auto& task = task_manager->CurrentTask();
+  __asm__("sti");
+
+  if (fd < 0 || task.Files().size() <= fd || !task.Files()[fd]) {
+    return { -1, EBADF };
+  }
+  task.Files().erase(task.Files().begin() + fd);
+  return { 0, 0 };
+}
+
 SYSCALL_LIN(lseek) {
   // off_t lseek(int fd, off_t offset, int whence);
   const auto fd = arg1;
@@ -750,8 +793,8 @@ extern "C" constexpr unsigned int numLinSyscall = 0x14f;
 extern "C" std::array<SyscallLinFuncType*, numLinSyscall> syscall_table_lin{
   /* 0x000 */ syscall::read,
   /* 0x001 */ syscall::write,
-  /* 0x002 */ syscall::dummy, // open
-  /* 0x003 */ syscall::dummy, // close
+  /* 0x002 */ syscall::open,
+  /* 0x003 */ syscall::close,
   /* 0x004 */ syscall::dummy, // stat
   /* 0x005 */ syscall::fstat,
   /* 0x006 */ syscall::dummy, // lstat
@@ -1005,7 +1048,7 @@ extern "C" std::array<SyscallLinFuncType*, numLinSyscall> syscall_table_lin{
   /* 0x0fe */ syscall::dummy, // inotify_add_watch,
   /* 0x0ff */ syscall::dummy, // inotify_rm_watch,
   /* 0x100 */ syscall::dummy, // migrate_pages,
-  /* 0x101 */ syscall::openat,
+  /* 0x101 */ syscall::dummy, // openat,
   /* 0x102 */ syscall::dummy, // mkdirat,
   /* 0x103 */ syscall::dummy, // mknodat,
   /* 0x104 */ syscall::dummy, // fchownat,
