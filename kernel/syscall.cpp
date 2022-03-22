@@ -765,7 +765,7 @@ extern "C" unsigned int LogSyscallNum() {
 
 extern "C" unsigned int LogSyscallRet() {
 
-  unsigned int syscallRet = getEAX();
+  int64_t syscallRet = getRAX();
 
   char s[100];
   int length = std::snprintf(s, sizeof(s), " : ret=0x%08X\n", syscallRet);
@@ -1064,7 +1064,7 @@ extern "C" std::array<SyscallLinFuncType*, numLinSyscall> syscall_table_lin{
   /* 0x0fe */ syscall::dummy, // inotify_add_watch,
   /* 0x0ff */ syscall::dummy, // inotify_rm_watch,
   /* 0x100 */ syscall::dummy, // migrate_pages,
-  /* 0x101 */ syscall::dummy, // openat,
+  /* 0x101 */ syscall::openat,
   /* 0x102 */ syscall::dummy, // mkdirat,
   /* 0x103 */ syscall::dummy, // mknodat,
   /* 0x104 */ syscall::dummy, // fchownat,
