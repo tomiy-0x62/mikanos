@@ -747,12 +747,12 @@ extern "C" syscall::Result invalid_Syscall_num(unsigned int syscallNum){
   return syscall::Exit(-1, 1, 1, 1, 1, 1);
 }
 
-extern "C" unsigned int LogSyscall() {
+extern "C" unsigned int LogSyscallNum() {
 
   unsigned int syscallNum = getEAX();
 
   char s[100];
-  int length = std::snprintf(s, sizeof(s), "Called Syscall Number: 0x%08X\n", syscallNum);
+  int length = std::snprintf(s, sizeof(s), "Called Syscall: 0x%08X", syscallNum);
   if (length > sizeof(s)) {
     strcpy(s, "LogSyscall: message too long");
   }
@@ -761,6 +761,22 @@ extern "C" unsigned int LogSyscall() {
   }
   Log(kError, "%s", s);
   return syscallNum;
+}
+
+extern "C" unsigned int LogSyscallRet() {
+
+  unsigned int syscallRet = getEAX();
+
+  char s[100];
+  int length = std::snprintf(s, sizeof(s), " : ret=0x%08X\n", syscallRet);
+  if (length > sizeof(s)) {
+    strcpy(s, "LogSyscall: message too long");
+  }
+  if (length > 1024) {
+    return syscallRet;
+  }
+  Log(kError, "%s", s);
+  return syscallRet;
 }
 
 using SyscallFuncType = syscall::Result (uint64_t, uint64_t, uint64_t,
