@@ -30,6 +30,7 @@ extern "C" {
   void SwitchContext(void* next_ctx, void* current_ctx);
   void RestoreContext(void* ctx);
   unsigned int getEAX();
+  int64_t getRAX();
   int CallApp(argCallApp *args);
   void IntHandlerLAPICTimer();
   void LoadTR(uint16_t sel);

@@ -6,6 +6,26 @@
 bits 64
 section .text
 
+%macro push_regs 0
+    push rdi
+    push rsi
+    push rdx
+    push rcx
+    push r8
+    push r9
+    push rax
+%endmacro
+
+%macro pop_regs 0
+    pop rax
+    pop r9
+    pop r8
+    pop rcx
+    pop rdx
+    pop rsi
+    pop rdi
+%endmacro
+
 global IoOut32  ; void IoOut32(uint16_t addr, uint32_t data);
 IoOut32:
     mov dx, di    ; dx = addr
@@ -302,6 +322,10 @@ global getEAX
 getEAX:  ; unsigned int getEAX();
     ret
 
+global getRAX
+getRAX:  ; int64_t getRAX();
+    ret
+
 extern GetCurrentTaskOSStackPointer
 extern syscall_table
 extern syscall_table_lin
@@ -339,22 +363,12 @@ SyscallEntry:  ; void SyscallEntry(void);
     pop rax
     and rsp, 0xfffffffffffffff0
 
-    push rdi
-    push rsi
-    push rdx
-    push rcx
-    push r8
-    push r9
+    push_regs
 
     call LogSyscallNum
 
-    pop r9
-    pop r8
-    pop rcx
-    pop rdx
-    pop rsi
-    pop rdi
-    
+    pop_regs
+
     test eax, 0x80000000 ; eax & 0x80000000 の結果が zero かどうかを判定 0x10e503
     jz .LinSyscall
 
@@ -363,14 +377,18 @@ SyscallEntry:  ; void SyscallEntry(void);
         cmp eax, [numSyscall] ; if(eax >= numSyscall)
         jae .InvalidSyscallNum
         call [syscall_table + 8 * eax]
+        push_regs
         call LogSyscallRet
+        pop_regs
         jmp .SyscallEnd
 
     .LinSyscall: 
         cmp eax, [numLinSyscall] ; if(eax >= numLinSyscall)
         jae .InvalidLinSyscallNum
         call [syscall_table_lin + 8 * eax]
+        push_regs
         call LogSyscallRet
+        pop_regs
         jmp .SyscallEnd
 
     .InvalidSyscallNum:
