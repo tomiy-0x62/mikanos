@@ -679,8 +679,9 @@ SYSCALL_LIN(exit_group) {
 }
 
 SYSCALL_LIN(openat) {
-    const char* path = reinterpret_cast<const char*>(arg1);
-  const int flags = arg2;
+  const int dirfd = arg1;
+  const char *path = reinterpret_cast<const char*>(arg2);
+  const int flags = arg3;
   __asm__("cli");
   auto& task = task_manager->CurrentTask();
   __asm__("sti");
