@@ -509,7 +509,7 @@ SYSCALL_LIN(lseek) {
     return { -1, EBADF };
   }
 
-  if (whence != SEEK_SET || whence != SEEK_CUR || whence != SEEK_END) {
+  if (whence != SEEK_SET && whence != SEEK_CUR && whence != SEEK_END) {
     return { -1, EINVAL };
   }
 
