@@ -338,7 +338,6 @@ off_t FileDescriptor::SetOffset(off_t offset, int whence) {
       off_ = size + offset;
       break;
   }
-  if (off_ < 0) { off_ = 0; }
   cluster_ = fat_entry_.FirstCluster();
   for (int i = 0; i < num_cluster(off_); i++) {
     const auto next_cluster = NextCluster(cluster_);
