@@ -369,7 +369,7 @@ SyscallEntry:  ; void SyscallEntry(void);
 
     pop_regs
 
-    test eax, 0x80000000 ; eax & 0x80000000 の結果が zero かどうかを判定 0x10e503
+    test eax, 0x80000000 ; eax & 0x80000000 の結果が zero かどうかを判定 
     jz .LinSyscall
 
     .MikanSyscall: 
