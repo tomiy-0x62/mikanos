@@ -16,6 +16,7 @@ int main(void) {
         perror("write");
         exit(1);
     }
+    lseek(fd, 5, SEEK_END);
     if (write(fd, " later!", 7) != 7) {
         perror("write");
         exit(1);
@@ -30,7 +31,7 @@ int main(void) {
         perror("read");
         exit(1);
     }
-    printf("%s", buf);
+    printf("readed: '%s'", buf);
     if (write(fd, "\nhoge\n", 6) != 6) {
         perror("write");
         exit(1);
