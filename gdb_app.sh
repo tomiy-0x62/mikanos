@@ -1,9 +1,12 @@
 rm -rf ./gdb_init
 
+APP=minied
+
 echo "# qemuに接続
 target remote localhost:1234
 
-file ./apps/ed/ed
+echo Debug $APP\\n
+file ./apps/$APP/$APP
 
 # 逆アセンブル結果をintel形式に
 set disassembly-flavor intel
