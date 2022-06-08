@@ -60,7 +60,8 @@ class Terminal {
   int linebuf_index_{0};
   std::array<char, kLineMax> linebuf_{};
   void Scroll1();
-
+  
+  bool is_input_end(const char *c);
   void ExecuteLine();
   WithError<int> ExecuteFile(fat::DirectoryEntry& file_entry,
                              char* command, char* first_arg);

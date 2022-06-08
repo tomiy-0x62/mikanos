@@ -293,6 +293,27 @@ Vector2D<int> Terminal::CalcCursorPos() const {
       Vector2D<int>{4 + 8 * cursor_.x, 4 + 16 * cursor_.y};
 }
 
+enum InputState {
+  Init,
+  InSingleQuote,
+  InDoubleQuote
+};
+
+bool Terminal::is_input_end(const char *line) {
+  enum InputState state = Init;
+  while (1) {
+    if (*line == '\0') { break; }
+    if (*line == '\\' && line[1] == '\0') { return false; }
+    if (*line == '"'  && state != InSingleQuote) { state = state==Init ? InDoubleQuote : Init; }
+    if (*line == '\'' && state != InDoubleQuote) { state = state==Init ? InSingleQuote : Init; }
+    if (*line == '\\') {
+      line++;
+    }
+    line++;
+  }
+  return state == Init;
+}
+
 Rectangle<int> Terminal::InputKey(
     uint8_t modifier, uint8_t keycode, char ascii) {
   DrawCursor(false);
@@ -301,23 +322,40 @@ Rectangle<int> Terminal::InputKey(
 
   if (ascii == '\n') {
     linebuf_[linebuf_index_] = 0;
-    if (linebuf_index_ > 0) {
-      cmd_history_.pop_back();
-      cmd_history_.push_front(linebuf_);
-    }
-    linebuf_index_ = 0;
-    cmd_history_index_ = -1;
-
-    cursor_.x = 0;
-    if (cursor_.y < kRows - 1) {
-      ++cursor_.y;
+    if (is_input_end(&linebuf_[0])) {
+      if (linebuf_index_ > 0) {
+        cmd_history_.pop_back();
+        cmd_history_.push_front(linebuf_);
+      }
+      linebuf_index_ = 0;
+      cmd_history_index_ = -1;
+  
+      cursor_.x = 0;
+      if (cursor_.y < kRows - 1) {
+        ++cursor_.y;
+      } else {
+        Scroll1();
+      }
+      ExecuteLine();
+      Print(">");
+      draw_area.pos = ToplevelWindow::kTopLeftMargin;
+      draw_area.size = window_->InnerSize();
     } else {
-      Scroll1();
+      cursor_.x = 0;
+      if (cursor_.y < kRows - 1) {
+        ++cursor_.y;
+      } else {
+        Scroll1();
+      }
+      if (linebuf_[linebuf_index_-1] == '\\') {
+        linebuf_index_--;
+      }
+      linebuf_[linebuf_index_] = ascii;
+      ++linebuf_index_;
+      Print("<");
+      draw_area.pos = ToplevelWindow::kTopLeftMargin;
+      draw_area.size = window_->InnerSize();
     }
-    ExecuteLine();
-    Print(">");
-    draw_area.pos = ToplevelWindow::kTopLeftMargin;
-    draw_area.size = window_->InnerSize();
   } else if (ascii == '\b') {
     if (cursor_.x > 0) {
       --cursor_.x;
