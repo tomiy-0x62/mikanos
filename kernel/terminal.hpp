@@ -15,6 +15,7 @@
 #include "task.hpp"
 #include "layer.hpp"
 #include "fat.hpp"
+#include "graphics.hpp"
 
 struct AppLoadInfo {
   uint64_t vaddr_end, entry;
@@ -28,6 +29,13 @@ struct TerminalDescriptor {
   bool exit_after_command;
   bool show_window;
   std::array<std::shared_ptr<FileDescriptor>, 3> files;
+};
+
+enum class EscSeqState {
+  kInit, // エスケープシーケンスに出会ってない状態
+  kEsc,  // ESC を受信した直後の状態
+  kCSI,  // \033[
+  kNum,  // 数字を 1 文字以上受信した状態
 };
 
 class Terminal {
@@ -60,9 +68,9 @@ class Terminal {
   std::array<char, kLineMax> linebuf_{};
   void Scroll1();
 
-  void ExecuteLine();
+  void ExecuteLine(std::vector<std::string>& tokens, int redir, int pipes);
   WithError<int> ExecuteFile(fat::DirectoryEntry& file_entry,
-                             char* command, char* first_arg);
+                             const char* command, std::vector<std::string>& args);
   void Print(char32_t c);
 
   std::deque<std::array<char, kLineMax>> cmd_history_{};
@@ -72,6 +80,10 @@ class Terminal {
   bool show_window_;
   std::array<std::shared_ptr<FileDescriptor>, 3> files_;
   int last_exit_code_{0};
+
+  EscSeqState esc_seq_state_{EscSeqState::kInit};
+  int esc_seq_n_{0};
+  PixelColor text_color_{255, 255, 255};
 };
 
 void TaskTerminal(uint64_t task_id, int64_t data);
@@ -82,6 +94,7 @@ class TerminalFileDescriptor : public FileDescriptor {
   size_t Read(void* buf, size_t len) override;
   size_t Write(const void* buf, size_t len) override;
   size_t Size() const override { return 0; }
+  bool IsTerminal() const override { return true; }
   size_t Load(void* buf, size_t len, size_t offset) override;
 
  private:
