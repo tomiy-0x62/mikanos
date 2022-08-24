@@ -18,7 +18,7 @@ struct SyscallResult {
 
 struct SyscallResult SyscallLogString(enum LogLevel level, const char* message);
 struct SyscallResult SyscallPutString(int fd, const char* s, size_t len);
-void SyscallExit(int exit_code);
+void SyscallExit(int exit_code) __attribute__((noreturn));
 struct SyscallResult SyscallOpenWindow(int w, int h, int x, int y, const char* title);
 
 #define LAYER_NO_REDRAW (0x00000001ull << 32)
@@ -43,6 +43,7 @@ struct SyscallResult SyscallOpenFile(const char* path, int flags);
 struct SyscallResult SyscallReadFile(int fd, void* buf, size_t count);
 struct SyscallResult SyscallDemandPages(size_t num_pages, int flags);
 struct SyscallResult SyscallMapFile(int fd, size_t* file_size, int flags);
+struct SyscallResult SyscallIsTerminal(int fd);
 
 #ifdef __cplusplus
 } // extern "C"

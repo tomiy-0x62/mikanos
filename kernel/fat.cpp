@@ -11,13 +11,21 @@ std::pair<const char*, bool>
 NextPathElement(const char* path, char* path_elem) {
   const char* next_slash = strchr(path, '/');
   if (next_slash == nullptr) {
-    strcpy(path_elem, path);
+    if (strlen(path) > 12) {
+      path_elem[0] = '\0';
+    } else {
+      strcpy(path_elem, path);
+    }
     return { nullptr, false };
   }
 
   const auto elem_len = next_slash - path;
-  strncpy(path_elem, path, elem_len);
-  path_elem[elem_len] = '\0';
+  if (elem_len > 12) {
+    path_elem[0] = '\0';
+  } else {
+    strncpy(path_elem, path, elem_len);
+    path_elem[elem_len] = '\0';
+  }
   return { &next_slash[1], true };
 }
 
@@ -64,6 +72,34 @@ void FormatName(const DirectoryEntry& entry, char* dest) {
   if (ext[1]) {
     strcat(dest, ext);
   }
+}
+
+void FormatWriteTime(const DirectoryEntry& entry, char* dest) {
+  int year = ((entry.write_date >> 9) & 0x3f) + 1980;
+  int month = (entry.write_date >> 5) & 0xf;
+  int date = entry.write_date & 0x1f;
+  int hour = (entry.write_time >> 11) & 0x1f;
+  int minute = (entry.write_time >> 5) & 0x3f;
+  int second = (entry.write_time & 0x1f) * 2;
+
+  auto int_to_str = [](char* out, int value, int num_digits) {
+    for (int i = 0; i < num_digits; i++) {
+      out[num_digits - 1 - i] = '0' + (value % 10);
+      value /= 10;
+    }
+  };
+  int_to_str(&dest[0], year, 4);
+  dest[4] = '-';
+  int_to_str(&dest[5], month, 2);
+  dest[7] = '-';
+  int_to_str(&dest[8], date, 2);
+  dest[10] = ' ';
+  int_to_str(&dest[11], hour, 2);
+  dest[13] = ':';
+  int_to_str(&dest[14], minute, 2);
+  dest[16] = ':';
+  int_to_str(&dest[17], second, 2);
+  dest[19] = '\0';
 }
 
 unsigned long NextCluster(unsigned long cluster) {
@@ -117,15 +153,19 @@ bool NameIsEqual(const DirectoryEntry& entry, const char* name) {
 
   int i = 0;
   int i83 = 0;
+  bool found_dot = false;
   for (; name[i] != 0 && i83 < sizeof(name83); ++i, ++i83) {
     if (name[i] == '.') {
+      if (found_dot) return false; // ドットが2個以上ある
       i83 = 7;
+      found_dot = true;
       continue;
     }
+    if (!found_dot && i > 7) return false; // ドットの前に9文字以上ある
     name83[i83] = toupper(name[i]);
   }
 
-  return memcmp(entry.name, name83, sizeof(name83)) == 0;
+  return name[i] == 0 && memcmp(entry.name, name83, sizeof(name83)) == 0;
 }
 
 size_t LoadFile(void* buf, size_t len, DirectoryEntry& entry) {
@@ -309,9 +349,9 @@ size_t FileDescriptor::Write(const void* buf, size_t len) {
       cluster_off_ = 0;
     }
 
-    uint8_t* sec = GetSectorByCluster<uint8_t>(cluster_);
-    size_t n = std::min(len, bytes_per_cluster - cluster_off_);
-    memcpy(&sec[cluster_off_], &buf8[total], n);
+    uint8_t* sec = GetSectorByCluster<uint8_t>(wr_cluster_);
+    size_t n = std::min(len - total, bytes_per_cluster - wr_cluster_off_);
+    memcpy(&sec[wr_cluster_off_], &buf8[total], n);
     total += n;
 
     cluster_off_ += n;

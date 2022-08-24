@@ -418,6 +418,19 @@ SYSCALL(MapFile) {
   return { vaddr_begin, 0 };
 }
 
+SYSCALL(IsTerminal) {
+  const int fd = arg1;
+  __asm__("cli");
+  auto& task = task_manager->CurrentTask();
+  __asm__("sti");
+
+  if (fd < 0 || task.Files().size() <= fd || !task.Files()[fd]) {
+    return { 0, EBADF };
+  }
+
+  return { task.Files()[fd]->IsTerminal(), 0 };
+}
+
 // Linux System call
 
 SYSCALL_LIN(read) {
@@ -786,7 +799,7 @@ using SyscallFuncType = syscall::Result (uint64_t, uint64_t, uint64_t,
 using SyscallLinFuncType = syscall::ResultLin (uint64_t, uint64_t, uint64_t,
                                          uint64_t, uint64_t, uint64_t);
 
-extern "C" constexpr unsigned int numSyscall = 0x10;
+extern "C" constexpr unsigned int numSyscall = 0x11;
 extern "C" std::array<SyscallFuncType*, numSyscall> syscall_table{
   /* 0x00 */ syscall::LogString,
   /* 0x01 */ syscall::PutString,
@@ -804,6 +817,7 @@ extern "C" std::array<SyscallFuncType*, numSyscall> syscall_table{
   /* 0x0d */ syscall::ReadFile,
   /* 0x0e */ syscall::DemandPages,
   /* 0x0f */ syscall::MapFile,
+  /* 0x10 */ syscall::IsTerminal,
 };
 
 extern "C" constexpr unsigned int numLinSyscall = 0x14f;
